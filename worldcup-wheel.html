@@ -293,6 +293,21 @@
             opacity: 0.7;
         }
 
+        .match-date.upcoming {
+            font-size: 1em;
+            font-weight: 600;
+            opacity: 1;
+            color: #FFC107;
+        }
+
+        .match-countdown {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 0.95em;
+            color: #4CAF50;
+            font-weight: 500;
+        }
+
         .match-stadium {
             margin-top: 5px;
             text-align: center;
@@ -409,8 +424,8 @@
 
                 allMatches = matchesData.games || matchesData;
                 allGroups = groupsData;
-                allTeams = teamsData;
-                stadiums = stadiumsData;
+                allTeams = teamsData.teams || teamsData;
+                stadiums = stadiumsData.stadiums || stadiumsData;
 
                 updateLastUpdate();
                 showGroups();
@@ -525,6 +540,52 @@
             });
         }
 
+        function parseMatchDate(dateString) {
+            const parts = dateString.split(' ');
+            const datePart = parts[0];
+            const timePart = parts[1];
+            const [month, day, year] = datePart.split('/');
+            const [hours, minutes] = timePart.split(':');
+            return new Date(year, month - 1, day, hours, minutes);
+        }
+
+        function getCountdown(matchDate) {
+            const now = new Date();
+            const diff = matchDate - now;
+            
+            if (diff < 0) return null;
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (days > 0) {
+                return `⏰ Kickoff in ${days} day${days !== 1 ? 's' : ''}, ${hours}h`;
+            } else if (hours > 0) {
+                return `⏰ Kickoff in ${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                return `⏰ Kickoff in ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            } else {
+                return '⏰ Starting soon!';
+            }
+        }
+
+        function formatMatchDate(dateString) {
+            try {
+                const matchDate = parseMatchDate(dateString);
+                const options = { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                };
+                return matchDate.toLocaleDateString('en-US', options);
+            } catch (e) {
+                return dateString;
+            }
+        }
+
         function renderMatches(matches) {
             const container = document.getElementById('matchesGrid');
             container.innerHTML = '';
@@ -539,6 +600,7 @@
                               match.time_elapsed !== 'notstarted' &&
                               match.time_elapsed !== 'FT';
                 const isFinished = match.finished === 'TRUE' || match.time_elapsed === 'FT';
+                const isUpcoming = !isLive && !isFinished;
                 
                 const homeTeam = match.home_team_name_en || match.home_team_label || 'TBD';
                 const awayTeam = match.away_team_name_en || match.away_team_label || 'TBD';
@@ -554,6 +616,21 @@
                 } else if (isFinished) {
                     statusClass = 'finished';
                     statusText = 'Finished';
+                }
+                
+                const formattedDate = formatMatchDate(match.local_date);
+                let countdownHTML = '';
+                
+                if (isUpcoming) {
+                    try {
+                        const matchDate = parseMatchDate(match.local_date);
+                        const countdown = getCountdown(matchDate);
+                        if (countdown) {
+                            countdownHTML = `<div class="match-countdown">${countdown}</div>`;
+                        }
+                    } catch (e) {
+                        console.log('Error parsing date:', e);
+                    }
                 }
                 
                 const card = document.createElement('div');
@@ -573,8 +650,9 @@
                             <span class="team-score">${match.away_score}</span>
                         </div>
                     </div>
-                    <div class="match-date">${match.local_date}</div>
-                    ${stadiumName ? `<div class="match-stadium">${stadiumName}</div>` : ''}
+                    <div class="match-date ${isUpcoming ? 'upcoming' : ''}">${formattedDate}</div>
+                    ${countdownHTML}
+                    ${stadiumName ? `<div class="match-stadium">📍 ${stadiumName}</div>` : ''}
                 `;
                 
                 container.appendChild(card);
