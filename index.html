@@ -220,7 +220,7 @@
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
-        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.3.0</div>
+        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.0</div>
     </div>
 
     <div class="controls">
@@ -362,30 +362,42 @@
             const teamOffset = size * 0.05; // How far teams are from match points
 
             // Draw each knockout round
+            // First pass: reorder all rounds based on their destination matches
+            const reorderedByRound = {};
+            
             ['r32', 'r16', 'qf', 'sf'].forEach((roundType, roundIdx) => {
                 let matches = allMatches
                     .filter(m => m.type === roundType)
                     .sort((a, b) => parseInt(a.id) - parseInt(b.id));
                 
-                // Special handling for R32: reorder to group by R16 destination
-                if (roundType === 'r32' && roundIdx === 0) {
-                    const r16Matches = allMatches
-                        .filter(m => m.type === 'r16')
-                        .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+                if (roundIdx > 0) {
+                    // Reorder this round based on previous round's grouping
+                    const prevRoundType = ['r32', 'r16', 'qf', 'sf'][roundIdx - 1];
+                    const prevRoundMatches = reorderedByRound[prevRoundType] || [];
                     
-                    // Group R32 matches by which R16 match they feed
                     const reordered = [];
-                    r16Matches.forEach(r16Match => {
-                        const feeding = matches.filter(r32Match => 
-                            r32Match.finished === 'TRUE' && (
-                                [r16Match.home_team_id, r16Match.away_team_id].includes(r32Match.home_team_id) ||
-                                [r16Match.home_team_id, r16Match.away_team_id].includes(r32Match.away_team_id)
+                    const matchesPerGroup = roundIdx === 1 ? 2 : (roundIdx === 2 ? 2 : 2); // 2 prev matches per current match
+                    
+                    // Group previous round matches in pairs, find which current match they feed
+                    for (let i = 0; i < prevRoundMatches.length; i += matchesPerGroup) {
+                        const groupMatches = prevRoundMatches.slice(i, i + matchesPerGroup);
+                        
+                        // Find the current round match that these feed into
+                        const targetMatch = matches.find(currMatch => 
+                            groupMatches.some(prevMatch => 
+                                prevMatch.finished === 'TRUE' && (
+                                    [currMatch.home_team_id, currMatch.away_team_id].includes(prevMatch.home_team_id) ||
+                                    [currMatch.home_team_id, currMatch.away_team_id].includes(prevMatch.away_team_id)
+                                )
                             )
                         );
-                        reordered.push(...feeding);
-                    });
+                        
+                        if (targetMatch && !reordered.find(r => r.id === targetMatch.id)) {
+                            reordered.push(targetMatch);
+                        }
+                    }
                     
-                    // Add any remaining R32 matches not yet placed
+                    // Add any remaining matches not yet placed
                     matches.forEach(m => {
                         if (!reordered.find(r => r.id === m.id)) {
                             reordered.push(m);
@@ -394,6 +406,13 @@
                     
                     matches = reordered;
                 }
+                
+                reorderedByRound[roundType] = matches;
+            });
+            
+            // Second pass: render using the reordered matches
+            ['r32', 'r16', 'qf', 'sf'].forEach((roundType, roundIdx) => {
+                const matches = reorderedByRound[roundType];
                 
                 const positions = KNOCKOUT_POSITIONS[roundType];
                 const radius = radii[roundType];
@@ -427,9 +446,7 @@
                     // Draw line to next round - Find this match in next round by ID
                     if (roundIdx < 3 && finished) {
                         const nextRoundType = ['r32', 'r16', 'qf', 'sf'][roundIdx + 1];
-                        const nextRoundMatches = allMatches
-                            .filter(m => m.type === nextRoundType)
-                            .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+                        const nextRoundMatches = reorderedByRound[nextRoundType];
                         
                         // Find which next-round match contains a team from this match
                         const nextMatch = nextRoundMatches.find(nm => 
