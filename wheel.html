@@ -220,7 +220,7 @@
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
-        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.0</div>
+        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.1</div>
     </div>
 
     <div class="controls">
@@ -370,13 +370,39 @@
                     .filter(m => m.type === roundType)
                     .sort((a, b) => parseInt(a.id) - parseInt(b.id));
                 
-                if (roundIdx > 0) {
+                // Special handling for R32: reorder to group by R16 destination (seed the cascade)
+                if (roundType === 'r32') {
+                    const r16Matches = allMatches
+                        .filter(m => m.type === 'r16')
+                        .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+                    
+                    // Group R32 matches by which R16 match they feed
+                    const reordered = [];
+                    r16Matches.forEach(r16Match => {
+                        const feeding = matches.filter(r32Match => 
+                            r32Match.finished === 'TRUE' && (
+                                [r16Match.home_team_id, r16Match.away_team_id].includes(r32Match.home_team_id) ||
+                                [r16Match.home_team_id, r16Match.away_team_id].includes(r32Match.away_team_id)
+                            )
+                        );
+                        reordered.push(...feeding);
+                    });
+                    
+                    // Add any remaining R32 matches not yet placed
+                    matches.forEach(m => {
+                        if (!reordered.find(r => r.id === m.id)) {
+                            reordered.push(m);
+                        }
+                    });
+                    
+                    matches = reordered;
+                } else if (roundIdx > 0) {
                     // Reorder this round based on previous round's grouping
                     const prevRoundType = ['r32', 'r16', 'qf', 'sf'][roundIdx - 1];
                     const prevRoundMatches = reorderedByRound[prevRoundType] || [];
                     
                     const reordered = [];
-                    const matchesPerGroup = roundIdx === 1 ? 2 : (roundIdx === 2 ? 2 : 2); // 2 prev matches per current match
+                    const matchesPerGroup = 2; // 2 prev matches per current match
                     
                     // Group previous round matches in pairs, find which current match they feed
                     for (let i = 0; i < prevRoundMatches.length; i += matchesPerGroup) {
