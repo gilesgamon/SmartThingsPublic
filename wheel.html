@@ -130,6 +130,20 @@
             filter: grayscale(100%);
         }
 
+        .match-time {
+            position: absolute;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .bracket-line {
             stroke: rgba(255, 255, 255, 0.15);
             stroke-width: 1.5;
@@ -201,26 +215,27 @@
         let allMatches = [], allTeams = [];
 
         // Pre-calculated positions for clean bracket layout
+        // Rotated so semi-finals are horizontal (0° and 180°)
         const KNOCKOUT_POSITIONS = {
             r32: [
                 // 16 matches, 32 teams - outer ring
-                {angle: 0}, {angle: 22.5}, {angle: 45}, {angle: 67.5},
-                {angle: 90}, {angle: 112.5}, {angle: 135}, {angle: 157.5},
-                {angle: 180}, {angle: 202.5}, {angle: 225}, {angle: 247.5},
-                {angle: 270}, {angle: 292.5}, {angle: 315}, {angle: 337.5}
+                {angle: -78.75}, {angle: -56.25}, {angle: -33.75}, {angle: -11.25},
+                {angle: 11.25}, {angle: 33.75}, {angle: 56.25}, {angle: 78.75},
+                {angle: 101.25}, {angle: 123.75}, {angle: 146.25}, {angle: 168.75},
+                {angle: 191.25}, {angle: 213.75}, {angle: 236.25}, {angle: 258.75}
             ],
             r16: [
                 // 8 matches - second ring
-                {angle: 11.25}, {angle: 56.25}, {angle: 101.25}, {angle: 146.25},
-                {angle: 191.25}, {angle: 236.25}, {angle: 281.25}, {angle: 326.25}
+                {angle: -67.5}, {angle: -22.5}, {angle: 22.5}, {angle: 67.5},
+                {angle: 112.5}, {angle: 157.5}, {angle: 202.5}, {angle: 247.5}
             ],
             qf: [
                 // 4 matches - third ring
-                {angle: 33.75}, {angle: 123.75}, {angle: 213.75}, {angle: 303.75}
+                {angle: -45}, {angle: 45}, {angle: 135}, {angle: 225}
             ],
             sf: [
-                // 2 matches - inner ring
-                {angle: 78.75}, {angle: 258.75}
+                // 2 matches - inner ring (horizontal)
+                {angle: 0}, {angle: 180}
             ]
         };
 
