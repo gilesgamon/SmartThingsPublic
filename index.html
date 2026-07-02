@@ -426,67 +426,37 @@
             const teamNodesContainer = document.getElementById('teamNodes');
             teamNodesContainer.innerHTML = '';
 
-            // Knockout rounds: R32, R16, QF, SF, Final
+            // Knockout rounds with proper spacing
             const rounds = [
-                { name: 'Round of 32', type: 'r32', radius: 0.45, count: 16 },
-                { name: 'Round of 16', type: 'r16', radius: 0.35, count: 8 },
-                { name: 'Quarter Finals', type: 'qf', radius: 0.25, count: 4 },
-                { name: 'Semi Finals', type: 'sf', radius: 0.15, count: 2 }
+                { name: 'Round of 32', type: 'r32', radius: 0.44, matchCount: 16, teamRadius: 0.46 },
+                { name: 'Round of 16', type: 'r16', radius: 0.34, matchCount: 8, teamRadius: 0.36 },
+                { name: 'Quarter Finals', type: 'qf', radius: 0.24, matchCount: 4, teamRadius: 0.26 },
+                { name: 'Semi Finals', type: 'sf', radius: 0.14, matchCount: 2, teamRadius: 0.16 }
             ];
 
             const baseRadius = Math.min(width, height);
 
+            // Draw all rounds
             rounds.forEach((round, roundIndex) => {
                 const roundMatches = allMatches.filter(m => m.type === round.type);
                 const radius = baseRadius * round.radius;
+                const teamRadius = baseRadius * round.teamRadius;
 
-                roundMatches.forEach((match, matchIndex) => {
-                    const angle = (matchIndex / round.count) * 2 * Math.PI - Math.PI / 2;
-                    const x = centerX + radius * Math.cos(angle);
-                    const y = centerY + radius * Math.sin(angle);
+                // Draw round circle
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', centerX);
+                circle.setAttribute('cy', centerY);
+                circle.setAttribute('r', radius);
+                circle.setAttribute('fill', 'none');
+                circle.setAttribute('stroke', 'rgba(255, 255, 255, 0.1)');
+                circle.setAttribute('stroke-width', '1');
+                circle.setAttribute('stroke-dasharray', '5,5');
+                svg.appendChild(circle);
 
-                    // Draw connection to center (or next round)
-                    const nextRadius = roundIndex < rounds.length - 1 ? 
-                        baseRadius * rounds[roundIndex + 1].radius : 
-                        baseRadius * 0.08;
-                    
-                    const nextAngle = Math.floor(matchIndex / 2) / (round.count / 2) * 2 * Math.PI - Math.PI / 2;
-                    const nextX = centerX + nextRadius * Math.cos(nextAngle);
-                    const nextY = centerY + nextRadius * Math.sin(nextAngle);
-
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('x1', x);
-                    line.setAttribute('y1', y);
-                    line.setAttribute('x2', nextX);
-                    line.setAttribute('y2', nextY);
-                    line.classList.add('connection-line');
-                    if (match.finished === 'TRUE') {
-                        line.classList.add('active');
-                    }
-                    svg.appendChild(line);
-
-                    // Add teams if determined
-                    if (match.home_team_id !== '0') {
-                        const homeTeam = allTeams.find(t => t.id === match.home_team_id);
-                        if (homeTeam) {
-                            const homeX = x - 35;
-                            createTeamNode(homeTeam, homeX, y, teamNodesContainer, match);
-                        }
-                    }
-
-                    if (match.away_team_id !== '0') {
-                        const awayTeam = allTeams.find(t => t.id === match.away_team_id);
-                        if (awayTeam) {
-                            const awayX = x + 35;
-                            createTeamNode(awayTeam, awayX, y, teamNodesContainer, match);
-                        }
-                    }
-                });
-
-                // Add round label
+                // Add round label at top
                 const labelAngle = -Math.PI / 2;
                 const labelX = centerX + radius * Math.cos(labelAngle);
-                const labelY = centerY + radius * Math.sin(labelAngle) - 40;
+                const labelY = centerY + radius * Math.sin(labelAngle) - 15;
                 
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'round-label';
@@ -495,10 +465,130 @@
                 labelDiv.style.top = `${labelY}px`;
                 labelDiv.style.transform = 'translateX(-50%)';
                 teamNodesContainer.appendChild(labelDiv);
+
+                // Place matches evenly around the circle
+                roundMatches.forEach((match, matchIndex) => {
+                    const angle = (matchIndex / round.matchCount) * 2 * Math.PI - Math.PI / 2;
+                    
+                    // Match position on inner circle
+                    const matchX = centerX + radius * Math.cos(angle);
+                    const matchY = centerY + radius * Math.sin(angle);
+
+                    // Team positions on outer circle
+                    const team1Angle = angle - 0.05;
+                    const team2Angle = angle + 0.05;
+                    const team1X = centerX + teamRadius * Math.cos(team1Angle);
+                    const team1Y = centerY + teamRadius * Math.sin(team1Angle);
+                    const team2X = centerX + teamRadius * Math.cos(team2Angle);
+                    const team2Y = centerY + teamRadius * Math.sin(team2Angle);
+
+                    // Draw lines from teams to match point
+                    if (match.home_team_id !== '0') {
+                        const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line1.setAttribute('x1', team1X);
+                        line1.setAttribute('y1', team1Y);
+                        line1.setAttribute('x2', matchX);
+                        line1.setAttribute('y2', matchY);
+                        line1.classList.add('connection-line');
+                        if (match.finished === 'TRUE') line1.classList.add('active');
+                        svg.appendChild(line1);
+                    }
+
+                    if (match.away_team_id !== '0') {
+                        const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line2.setAttribute('x1', team2X);
+                        line2.setAttribute('y1', team2Y);
+                        line2.setAttribute('x2', matchX);
+                        line2.setAttribute('y2', matchY);
+                        line2.classList.add('connection-line');
+                        if (match.finished === 'TRUE') line2.classList.add('active');
+                        svg.appendChild(line2);
+                    }
+
+                    // Draw line from match point to next round
+                    if (roundIndex < rounds.length - 1) {
+                        const nextRadius = baseRadius * rounds[roundIndex + 1].radius;
+                        const nextAngle = Math.floor(matchIndex / 2) / rounds[roundIndex + 1].matchCount * 2 * Math.PI - Math.PI / 2;
+                        const nextX = centerX + nextRadius * Math.cos(nextAngle);
+                        const nextY = centerY + nextRadius * Math.sin(nextAngle);
+
+                        const lineNext = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        lineNext.setAttribute('x1', matchX);
+                        lineNext.setAttribute('y1', matchY);
+                        lineNext.setAttribute('x2', nextX);
+                        lineNext.setAttribute('y2', nextY);
+                        lineNext.classList.add('connection-line');
+                        if (match.finished === 'TRUE') lineNext.classList.add('active');
+                        svg.appendChild(lineNext);
+                    } else {
+                        // Last round connects to center
+                        const lineCenter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        lineCenter.setAttribute('x1', matchX);
+                        lineCenter.setAttribute('y1', matchY);
+                        lineCenter.setAttribute('x2', centerX);
+                        lineCenter.setAttribute('y2', centerY);
+                        lineCenter.classList.add('connection-line');
+                        if (match.finished === 'TRUE') lineCenter.classList.add('active');
+                        svg.appendChild(lineCenter);
+                    }
+
+                    // Create team nodes
+                    if (match.home_team_id !== '0') {
+                        const homeTeam = allTeams.find(t => t.id === match.home_team_id);
+                        if (homeTeam) {
+                            createTeamNode(homeTeam, team1X, team1Y, teamNodesContainer, match, 'home');
+                        }
+                    } else {
+                        createPlaceholderNode(match.home_team_label || 'TBD', team1X, team1Y, teamNodesContainer);
+                    }
+
+                    if (match.away_team_id !== '0') {
+                        const awayTeam = allTeams.find(t => t.id === match.away_team_id);
+                        if (awayTeam) {
+                            createTeamNode(awayTeam, team2X, team2Y, teamNodesContainer, match, 'away');
+                        }
+                    } else {
+                        createPlaceholderNode(match.away_team_label || 'TBD', team2X, team2Y, teamNodesContainer);
+                    }
+                });
             });
+
+            // Add final match indicator
+            const finalMatch = allMatches.find(m => m.type === 'final');
+            if (finalMatch && finalMatch.home_team_id !== '0') {
+                const trophy = document.querySelector('.center-trophy');
+                const winner = finalMatch.finished === 'TRUE' ? 
+                    (parseInt(finalMatch.home_score) > parseInt(finalMatch.away_score) ? 
+                        allTeams.find(t => t.id === finalMatch.home_team_id) :
+                        allTeams.find(t => t.id === finalMatch.away_team_id)) : null;
+                
+                if (winner) {
+                    trophy.innerHTML = `
+                        <img src="${winner.flag}" style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid #FFD700;" />
+                        <div class="trophy-text">${winner.fifa_code}</div>
+                    `;
+                }
+            }
         }
 
-        function createTeamNode(team, x, y, container, match = null) {
+        function createPlaceholderNode(label, x, y, container) {
+            const node = document.createElement('div');
+            node.className = 'team-node';
+            node.style.left = `${x - 30}px`;
+            node.style.top = `${y - 30}px`;
+            node.style.opacity = '0.4';
+            
+            const text = document.createElement('div');
+            text.style.fontSize = '0.65em';
+            text.style.textAlign = 'center';
+            text.style.padding = '5px';
+            text.textContent = label.length > 15 ? label.substring(0, 12) + '...' : label;
+            
+            node.appendChild(text);
+            container.appendChild(node);
+        }
+
+        function createTeamNode(team, x, y, container, match = null, side = null) {
             const node = document.createElement('div');
             node.className = 'team-node';
             node.style.left = `${x - 30}px`;
@@ -508,10 +598,9 @@
                 const homeWon = parseInt(match.home_score) > parseInt(match.away_score);
                 const awayWon = parseInt(match.away_score) > parseInt(match.home_score);
                 
-                if ((team.id === match.home_team_id && homeWon) || 
-                    (team.id === match.away_team_id && awayWon)) {
+                if ((side === 'home' && homeWon) || (side === 'away' && awayWon)) {
                     node.classList.add('winner');
-                } else {
+                } else if (homeWon || awayWon) {
                     node.classList.add('eliminated');
                 }
             }
