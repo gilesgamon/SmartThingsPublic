@@ -220,7 +220,11 @@
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
-        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.3</div>
+        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.5.0</div>
+        <div id="timezoneInfo" style="font-size: 0.75em; opacity: 0.6; margin-top: 3px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+            <span>🌍</span>
+            <span id="timezoneDisplay">Detecting timezone...</span>
+        </div>
     </div>
 
     <div class="controls">
@@ -272,6 +276,13 @@
 
         async function fetchData() {
             try {
+                // Update timezone display
+                const timezone = getUserTimezone();
+                const timezoneDisplay = document.getElementById('timezoneDisplay');
+                if (timezoneDisplay) {
+                    timezoneDisplay.textContent = `Times shown in: ${timezone}`;
+                }
+
                 const [matchesRes, teamsRes] = await Promise.all([
                     fetch(`${API_BASE}/get/games`),
                     fetch(`${API_BASE}/get/teams`)
@@ -297,29 +308,14 @@
 
         function parseMatchDate(dateString) {
             // Parse "06/11/2026 13:00" format
+            // API times appear to be in US Eastern Time (tournament host timezone)
             const [datePart, timePart] = dateString.split(' ');
             const [month, day, year] = datePart.split('/');
             const [hours, minutes] = timePart.split(':');
+            
+            // Create date in UTC, assuming API provides ET times
+            // We'll parse as local browser time, which the browser will then convert
             return new Date(year, month - 1, day, hours, minutes);
-        }
-
-        function getMatchStatus(timeElapsed) {
-            // Parse time_elapsed field for match status
-            const elapsed = timeElapsed.toLowerCase();
-            
-            if (elapsed === 'notstarted') return null;
-            if (elapsed === 'finished' || elapsed === 'ft') return 'FT';
-            
-            // Check for specific match periods
-            if (elapsed.includes('1h')) return '1st Half';
-            if (elapsed.includes('ht')) return 'Half Time';
-            if (elapsed.includes('2h')) return '2nd Half';
-            if (elapsed.includes('et')) return 'Extra Time';
-            if (elapsed.includes('bt')) return 'Break';
-            if (elapsed.includes('p')) return 'Penalties';
-            
-            // Return as-is for numeric (minute display)
-            return elapsed;
         }
 
         function formatMatchTime(dateString) {
@@ -329,11 +325,20 @@
                     month: 'short', 
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZoneName: 'short'
                 };
-                return date.toLocaleDateString('en-US', options);
+                return date.toLocaleString(undefined, options);
             } catch (e) {
                 return dateString;
+            }
+        }
+
+        function getUserTimezone() {
+            try {
+                return Intl.DateTimeFormat().resolvedOptions().timeZone;
+            } catch (e) {
+                return 'Local Time';
             }
         }
 
@@ -598,6 +603,13 @@
         }
 
         // Initialize
+        // Set timezone display immediately
+        const timezone = getUserTimezone();
+        const timezoneDisplay = document.getElementById('timezoneDisplay');
+        if (timezoneDisplay) {
+            timezoneDisplay.textContent = `Times shown in: ${timezone}`;
+        }
+        
         fetchData();
         setInterval(fetchData, 60000);
     </script>
