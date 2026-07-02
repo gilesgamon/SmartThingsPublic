@@ -12,54 +12,133 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e;
-            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #000;
+            color: #fff;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             padding: 20px;
         }
 
         .header {
+            position: absolute;
+            top: 20px;
             text-align: center;
-            margin-bottom: 20px;
+            z-index: 100;
         }
 
         .header h1 {
-            font-size: 2em;
+            font-size: 1.5em;
+            font-weight: 600;
             margin-bottom: 5px;
         }
 
         .controls {
+            position: absolute;
+            top: 70px;
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            z-index: 100;
         }
 
         .btn {
-            padding: 10px 20px;
-            background: #16213e;
-            border: 2px solid #0f3460;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 13px;
             transition: all 0.3s;
         }
 
-        .btn:hover, .btn.active {
-            background: #0f3460;
-            border-color: #e94560;
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        #canvas {
-            max-width: 95vmin;
-            max-height: 95vmin;
-            width: 800px;
-            height: 800px;
-            display: block;
-            margin: 0 auto;
+        #wheelContainer {
+            position: relative;
+            width: min(95vw, 95vh);
+            height: min(95vw, 95vh);
+            max-width: 800px;
+            max-height: 800px;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .center-trophy {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+        }
+
+        .team-flag {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            transform: translate(-50%, -50%);
+            overflow: hidden;
+        }
+
+        .team-flag:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            border-color: #FFD700;
+            z-index: 50;
+        }
+
+        .team-flag img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .team-flag.winner {
+            border-color: #4ade80;
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.5);
+        }
+
+        .team-flag.eliminated {
+            opacity: 0.3;
+            filter: grayscale(100%);
+        }
+
+        .bracket-line {
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 1.5;
+            fill: none;
+        }
+
+        .bracket-line.active {
+            stroke: rgba(74, 222, 128, 0.6);
+            stroke-width: 2;
         }
 
         .loading {
@@ -68,44 +147,40 @@
         }
 
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid #e94560;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #fff;
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 0 auto 15px;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
 
-        #tooltip {
+        .tooltip {
             position: fixed;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             padding: 10px 15px;
             border-radius: 8px;
-            border: 2px solid #e94560;
-            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 13px;
             pointer-events: none;
             display: none;
-            z-index: 1000;
-            max-width: 250px;
+            z-index: 200;
+            white-space: nowrap;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
-        <div>Tournament Bracket Wheel</div>
     </div>
 
     <div class="controls">
-        <button class="btn active" id="btnKnockout" onclick="showKnockout()">Knockout Stage</button>
-        <button class="btn" id="btnGroups" onclick="showGroups()">Group Stage</button>
-        <button class="btn" onclick="refresh()">🔄 Refresh</button>
+        <button class="btn" onclick="refreshData()">🔄 Refresh</button>
     </div>
 
     <div id="loading" class="loading">
@@ -113,337 +188,209 @@
         <div>Loading tournament data...</div>
     </div>
 
-    <canvas id="canvas" style="display: none;"></canvas>
-    <div id="tooltip"></div>
+    <div id="wheelContainer" style="display: none;">
+        <svg id="bracketSvg"></svg>
+        <div class="center-trophy">🏆</div>
+        <div id="teamFlags"></div>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
 
     <script>
         const API_BASE = 'https://worldcup26.ir';
-        let canvas, ctx;
-        let allMatches = [], allTeams = [], allGroups = [];
-        let currentView = 'knockout';
-        let hoveredTeam = null;
+        let allMatches = [], allTeams = [];
 
-        async function init() {
-            canvas = document.getElementById('canvas');
-            ctx = canvas.getContext('2d');
-            
-            // Set canvas resolution
-            const size = Math.min(window.innerWidth, window.innerHeight) * 0.95;
-            canvas.width = size;
-            canvas.height = size;
-            
-            await fetchData();
-        }
+        // Pre-calculated positions for clean bracket layout
+        const KNOCKOUT_POSITIONS = {
+            r32: [
+                // 16 matches, 32 teams - outer ring
+                {angle: 0}, {angle: 22.5}, {angle: 45}, {angle: 67.5},
+                {angle: 90}, {angle: 112.5}, {angle: 135}, {angle: 157.5},
+                {angle: 180}, {angle: 202.5}, {angle: 225}, {angle: 247.5},
+                {angle: 270}, {angle: 292.5}, {angle: 315}, {angle: 337.5}
+            ],
+            r16: [
+                // 8 matches - second ring
+                {angle: 11.25}, {angle: 56.25}, {angle: 101.25}, {angle: 146.25},
+                {angle: 191.25}, {angle: 236.25}, {angle: 281.25}, {angle: 326.25}
+            ],
+            qf: [
+                // 4 matches - third ring
+                {angle: 33.75}, {angle: 123.75}, {angle: 213.75}, {angle: 303.75}
+            ],
+            sf: [
+                // 2 matches - inner ring
+                {angle: 78.75}, {angle: 258.75}
+            ]
+        };
 
         async function fetchData() {
             try {
-                const [matchesRes, teamsRes, groupsRes] = await Promise.all([
+                const [matchesRes, teamsRes] = await Promise.all([
                     fetch(`${API_BASE}/get/games`),
-                    fetch(`${API_BASE}/get/teams`),
-                    fetch(`${API_BASE}/get/groups`)
+                    fetch(`${API_BASE}/get/teams`)
                 ]);
 
                 const matchesData = await matchesRes.json();
                 const teamsData = await teamsRes.json();
-                const groupsData = await groupsRes.json();
 
                 allMatches = matchesData.games || matchesData;
                 allTeams = teamsData.teams || teamsData;
-                allGroups = groupsData.groups || groupsData;
 
                 console.log('Loaded:', allMatches.length, 'matches,', allTeams.length, 'teams');
 
                 document.getElementById('loading').style.display = 'none';
-                canvas.style.display = 'block';
+                document.getElementById('wheelContainer').style.display = 'block';
                 
-                if (currentView === 'knockout') showKnockout();
-                else showGroups();
+                renderWheel();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('loading').innerHTML = '<h3>⚠️ Connection Error</h3><p>Make sure you\'re serving via HTTP</p>';
+                document.getElementById('loading').innerHTML = '<h3>⚠️ Connection Error</h3><p>Serve via HTTP: python3 -m http.server 8000</p>';
             }
         }
 
-        function showKnockout() {
-            currentView = 'knockout';
-            document.getElementById('btnKnockout').classList.add('active');
-            document.getElementById('btnGroups').classList.remove('active');
-            drawKnockout();
-        }
+        function renderWheel() {
+            const container = document.getElementById('wheelContainer');
+            const size = container.clientWidth;
+            const center = size / 2;
 
-        function showGroups() {
-            currentView = 'groups';
-            document.getElementById('btnGroups').classList.add('active');
-            document.getElementById('btnKnockout').classList.remove('active');
-            drawGroups();
-        }
+            const svg = document.getElementById('bracketSvg');
+            const flagsContainer = document.getElementById('teamFlags');
+            
+            svg.innerHTML = '';
+            flagsContainer.innerHTML = '';
+            svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
 
-        function drawKnockout() {
-            const w = canvas.width;
-            const h = canvas.height;
-            const cx = w / 2;
-            const cy = h / 2;
+            // Radii for each round
+            const radii = {
+                r32: size * 0.42,
+                r16: size * 0.32,
+                qf: size * 0.22,
+                sf: size * 0.12
+            };
 
-            ctx.clearRect(0, 0, w, h);
+            const teamOffset = size * 0.05; // How far teams are from match points
 
-            // Rounds configuration
-            const rounds = [
-                { type: 'r32', name: 'R32', radius: 0.42, teamRadius: 0.45, color: '#e94560' },
-                { type: 'r16', name: 'R16', radius: 0.32, teamRadius: 0.35, color: '#e85d75' },
-                { type: 'qf', name: 'QF', radius: 0.22, teamRadius: 0.25, color: '#e67589' },
-                { type: 'sf', name: 'SF', radius: 0.12, teamRadius: 0.15, color: '#e48d9e' }
-            ];
+            // Draw each knockout round
+            ['r32', 'r16', 'qf', 'sf'].forEach((roundType, roundIdx) => {
+                const matches = allMatches.filter(m => m.type === roundType);
+                const positions = KNOCKOUT_POSITIONS[roundType];
+                const radius = radii[roundType];
 
-            // Draw center trophy
-            ctx.save();
-            ctx.font = 'bold 48px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🏆', cx, cy);
-            ctx.font = 'bold 16px Arial';
-            ctx.fillStyle = '#FFD700';
-            ctx.fillText('FINAL', cx, cy + 40);
-            ctx.restore();
+                matches.forEach((match, matchIdx) => {
+                    if (matchIdx >= positions.length) return;
 
-            // Draw each round
-            rounds.forEach((round, roundIdx) => {
-                const matches = allMatches.filter(m => m.type === round.type);
-                if (matches.length === 0) return;
+                    const pos = positions[matchIdx];
+                    const angleRad = (pos.angle - 90) * Math.PI / 180;
+                    
+                    // Match point position
+                    const mx = center + radius * Math.cos(angleRad);
+                    const my = center + radius * Math.sin(angleRad);
 
-                const radius = w * round.radius / 2;
-                const teamRadius = w * round.teamRadius / 2;
+                    // Team positions (slightly further out)
+                    const teamRadius = radius + teamOffset;
+                    const team1Angle = angleRad - 0.08;
+                    const team2Angle = angleRad + 0.08;
+                    
+                    const t1x = center + teamRadius * Math.cos(team1Angle);
+                    const t1y = center + teamRadius * Math.sin(team1Angle);
+                    const t2x = center + teamRadius * Math.cos(team2Angle);
+                    const t2y = center + teamRadius * Math.sin(team2Angle);
 
-                // Draw round circle guide
-                ctx.save();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.restore();
-
-                // Draw round label
-                ctx.save();
-                ctx.font = 'bold 14px Arial';
-                ctx.fillStyle = round.color;
-                ctx.textAlign = 'center';
-                ctx.fillText(round.name, cx, cy - radius - 15);
-                ctx.restore();
-
-                // Draw matches
-                matches.forEach((match, idx) => {
-                    const angle = (idx / matches.length) * Math.PI * 2 - Math.PI / 2;
-                    const mx = cx + radius * Math.cos(angle);
-                    const my = cy + radius * Math.sin(angle);
-
-                    // Team positions
-                    const t1Angle = angle - 0.08;
-                    const t2Angle = angle + 0.08;
-                    const t1x = cx + teamRadius * Math.cos(t1Angle);
-                    const t1y = cy + teamRadius * Math.sin(t1Angle);
-                    const t2x = cx + teamRadius * Math.cos(t2Angle);
-                    const t2y = cy + teamRadius * Math.sin(t2Angle);
+                    const finished = match.finished === 'TRUE';
 
                     // Draw lines from teams to match point
-                    ctx.save();
-                    ctx.strokeStyle = match.finished === 'TRUE' ? '#4ade80' : 'rgba(255, 255, 255, 0.2)';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([]);
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(t1x, t1y);
-                    ctx.lineTo(mx, my);
-                    ctx.stroke();
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(t2x, t2y);
-                    ctx.lineTo(mx, my);
-                    ctx.stroke();
-                    ctx.restore();
+                    drawLine(svg, t1x, t1y, mx, my, finished);
+                    drawLine(svg, t2x, t2y, mx, my, finished);
 
                     // Draw line to next round
-                    if (roundIdx < rounds.length - 1) {
-                        const nextRadius = w * rounds[roundIdx + 1].radius / 2;
-                        const nextIdx = Math.floor(idx / 2);
-                        const nextCount = allMatches.filter(m => m.type === rounds[roundIdx + 1].type).length;
-                        const nextAngle = (nextIdx / nextCount) * Math.PI * 2 - Math.PI / 2;
-                        const nx = cx + nextRadius * Math.cos(nextAngle);
-                        const ny = cy + nextRadius * Math.sin(nextAngle);
-
-                        ctx.save();
-                        ctx.strokeStyle = match.finished === 'TRUE' ? '#4ade80' : 'rgba(255, 255, 255, 0.15)';
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        ctx.moveTo(mx, my);
-                        ctx.lineTo(nx, ny);
-                        ctx.stroke();
-                        ctx.restore();
+                    if (roundIdx < 3) {
+                        const nextRound = ['r32', 'r16', 'qf', 'sf'][roundIdx + 1];
+                        const nextRadius = radii[nextRound];
+                        const nextMatchIdx = Math.floor(matchIdx / 2);
+                        const nextPos = KNOCKOUT_POSITIONS[nextRound][nextMatchIdx];
+                        const nextAngleRad = (nextPos.angle - 90) * Math.PI / 180;
+                        const nx = center + nextRadius * Math.cos(nextAngleRad);
+                        const ny = center + nextRadius * Math.sin(nextAngleRad);
+                        
+                        drawLine(svg, mx, my, nx, ny, finished);
                     } else {
-                        // Connect to center
-                        ctx.save();
-                        ctx.strokeStyle = match.finished === 'TRUE' ? '#4ade80' : 'rgba(255, 255, 255, 0.15)';
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-                        ctx.moveTo(mx, my);
-                        ctx.lineTo(cx, cy);
-                        ctx.stroke();
-                        ctx.restore();
+                        // Connect semi-finals to center
+                        drawLine(svg, mx, my, center, center, finished);
                     }
 
-                    // Draw teams
+                    // Create team flags
                     const team1 = allTeams.find(t => t.id === match.home_team_id);
                     const team2 = allTeams.find(t => t.id === match.away_team_id);
 
-                    drawTeamNode(t1x, t1y, team1, match, 'home');
-                    drawTeamNode(t2x, t2y, team2, match, 'away');
+                    if (team1) createFlag(flagsContainer, team1, t1x, t1y, match, 'home');
+                    if (team2) createFlag(flagsContainer, team2, t2x, t2y, match, 'away');
                 });
             });
         }
 
-        function drawTeamNode(x, y, team, match, side) {
-            const size = 30;
+        function drawLine(svg, x1, y1, x2, y2, active) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.classList.add('bracket-line');
+            if (active) line.classList.add('active');
+            svg.appendChild(line);
+        }
 
-            // Determine if winner/loser
-            let isWinner = false;
-            let isEliminated = false;
-            
-            if (team && match && match.finished === 'TRUE') {
-                const homeScore = parseInt(match.home_score);
-                const awayScore = parseInt(match.away_score);
-                if (side === 'home' && homeScore > awayScore) isWinner = true;
-                if (side === 'away' && awayScore > homeScore) isWinner = true;
-                if ((side === 'home' && homeScore < awayScore) || (side === 'away' && awayScore < homeScore)) {
-                    isEliminated = true;
+        function createFlag(container, team, x, y, match, side) {
+            const flag = document.createElement('div');
+            flag.className = 'team-flag';
+            flag.style.left = x + 'px';
+            flag.style.top = y + 'px';
+
+            // Check winner/loser
+            if (match && match.finished === 'TRUE') {
+                const homeWon = parseInt(match.home_score) > parseInt(match.away_score);
+                const awayWon = parseInt(match.away_score) > parseInt(match.home_score);
+                
+                if ((side === 'home' && homeWon) || (side === 'away' && awayWon)) {
+                    flag.classList.add('winner');
+                } else {
+                    flag.classList.add('eliminated');
                 }
             }
 
-            ctx.save();
-            
-            // Draw circle
-            ctx.beginPath();
-            ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-            
-            if (isWinner) {
-                ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
-                ctx.strokeStyle = '#4ade80';
-                ctx.lineWidth = 3;
-            } else if (isEliminated) {
-                ctx.fillStyle = 'rgba(100, 100, 100, 0.2)';
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.lineWidth = 2;
-                ctx.globalAlpha = 0.4;
-            } else {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.lineWidth = 2;
-            }
-            
-            ctx.fill();
-            ctx.stroke();
+            // Add flag image
+            const img = document.createElement('img');
+            img.src = team.flag || `https://flagcdn.com/w80/${team.iso2?.toLowerCase()}.png`;
+            img.alt = team.name_en;
+            img.onerror = function() {
+                flag.innerHTML = `<div style="font-size: 11px; font-weight: bold;">${team.fifa_code || team.name_en?.substring(0, 3).toUpperCase()}</div>`;
+            };
+            flag.appendChild(img);
 
-            // Draw flag emoji or country code
-            if (team) {
-                ctx.font = 'bold 12px Arial';
-                ctx.fillStyle = isEliminated ? 'rgba(255, 255, 255, 0.5)' : '#fff';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                const code = team.fifa_code || team.name_en?.substring(0, 3).toUpperCase() || '?';
-                ctx.fillText(code, x, y);
-            } else {
-                // TBD
-                ctx.font = '10px Arial';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('TBD', x, y);
-            }
-
-            ctx.restore();
-        }
-
-        function drawGroups() {
-            const w = canvas.width;
-            const h = canvas.height;
-            const cx = w / 2;
-            const cy = h / 2;
-
-            ctx.clearRect(0, 0, w, h);
-
-            // Draw center trophy
-            ctx.save();
-            ctx.font = 'bold 32px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🏆', cx, cy);
-            ctx.restore();
-
-            const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-            const radius = w * 0.38;
-
-            groupLetters.forEach((letter, idx) => {
-                const angle = (idx / groupLetters.length) * Math.PI * 2 - Math.PI / 2;
-                const gx = cx + radius * Math.cos(angle);
-                const gy = cy + radius * Math.sin(angle);
-
-                // Draw line from center
-                ctx.save();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(gx, gy);
-                ctx.stroke();
-                ctx.restore();
-
-                // Draw group label
-                ctx.save();
-                ctx.font = 'bold 20px Arial';
-                ctx.fillStyle = '#e94560';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(`Group ${letter}`, gx, gy - 50);
-                ctx.restore();
-
-                // Get teams in group
-                const teams = allTeams.filter(t => t.groups === letter);
-                
-                teams.forEach((team, teamIdx) => {
-                    const teamAngle = angle + (teamIdx - 1.5) * 0.12;
-                    const teamRadius = radius * 1.05;
-                    const tx = cx + teamRadius * Math.cos(teamAngle);
-                    const ty = cy + teamRadius * Math.sin(teamAngle);
-
-                    // Draw team
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(tx, ty, 18, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                    ctx.lineWidth = 2;
-                    ctx.fill();
-                    ctx.stroke();
-
-                    ctx.font = 'bold 10px Arial';
-                    ctx.fillStyle = '#fff';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    const code = team.fifa_code || team.name_en?.substring(0, 3).toUpperCase();
-                    ctx.fillText(code, tx, ty);
-                    ctx.restore();
-                });
+            // Tooltip
+            flag.addEventListener('mouseenter', (e) => {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.textContent = team.name_en;
+                tooltip.style.display = 'block';
+                tooltip.style.left = e.pageX + 15 + 'px';
+                tooltip.style.top = e.pageY - 10 + 'px';
             });
+            flag.addEventListener('mouseleave', () => {
+                document.getElementById('tooltip').style.display = 'none';
+            });
+
+            container.appendChild(flag);
         }
 
-        function refresh() {
+        function refreshData() {
             document.getElementById('loading').style.display = 'block';
-            canvas.style.display = 'none';
+            document.getElementById('wheelContainer').style.display = 'none';
             fetchData();
         }
 
-        // Start
-        init();
-        setInterval(() => fetchData(), 60000);
+        // Initialize
+        fetchData();
+        setInterval(fetchData, 60000);
     </script>
 </body>
 </html>
