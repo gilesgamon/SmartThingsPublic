@@ -363,9 +363,37 @@
 
             // Draw each knockout round
             ['r32', 'r16', 'qf', 'sf'].forEach((roundType, roundIdx) => {
-                const matches = allMatches
+                let matches = allMatches
                     .filter(m => m.type === roundType)
-                    .sort((a, b) => parseInt(a.id) - parseInt(b.id)); // Sort by ID to maintain bracket structure
+                    .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+                
+                // Special handling for R32: reorder to group by R16 destination
+                if (roundType === 'r32' && roundIdx === 0) {
+                    const r16Matches = allMatches
+                        .filter(m => m.type === 'r16')
+                        .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+                    
+                    // Group R32 matches by which R16 match they feed
+                    const reordered = [];
+                    r16Matches.forEach(r16Match => {
+                        const feeding = matches.filter(r32Match => 
+                            r32Match.finished === 'TRUE' && (
+                                [r16Match.home_team_id, r16Match.away_team_id].includes(r32Match.home_team_id) ||
+                                [r16Match.home_team_id, r16Match.away_team_id].includes(r32Match.away_team_id)
+                            )
+                        );
+                        reordered.push(...feeding);
+                    });
+                    
+                    // Add any remaining R32 matches not yet placed
+                    matches.forEach(m => {
+                        if (!reordered.find(r => r.id === m.id)) {
+                            reordered.push(m);
+                        }
+                    });
+                    
+                    matches = reordered;
+                }
                 
                 const positions = KNOCKOUT_POSITIONS[roundType];
                 const radius = radii[roundType];
