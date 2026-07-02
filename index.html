@@ -302,6 +302,25 @@
             return new Date(year, month - 1, day, hours, minutes);
         }
 
+        function getMatchStatus(timeElapsed) {
+            // Parse time_elapsed field for match status
+            const elapsed = timeElapsed.toLowerCase();
+            
+            if (elapsed === 'notstarted') return null;
+            if (elapsed === 'finished' || elapsed === 'ft') return 'FT';
+            
+            // Check for specific match periods
+            if (elapsed.includes('1h')) return '1st Half';
+            if (elapsed.includes('ht')) return 'Half Time';
+            if (elapsed.includes('2h')) return '2nd Half';
+            if (elapsed.includes('et')) return 'Extra Time';
+            if (elapsed.includes('bt')) return 'Break';
+            if (elapsed.includes('p')) return 'Penalties';
+            
+            // Return as-is for numeric (minute display)
+            return elapsed;
+        }
+
         function formatMatchTime(dateString) {
             try {
                 const date = parseMatchDate(dateString);
@@ -343,7 +362,10 @@
 
             // Draw each knockout round
             ['r32', 'r16', 'qf', 'sf'].forEach((roundType, roundIdx) => {
-                const matches = allMatches.filter(m => m.type === roundType);
+                const matches = allMatches
+                    .filter(m => m.type === roundType)
+                    .sort((a, b) => parseInt(a.id) - parseInt(b.id)); // Sort by ID to maintain bracket structure
+                
                 const positions = KNOCKOUT_POSITIONS[roundType];
                 const radius = radii[roundType];
 
@@ -401,13 +423,28 @@
                         const timeDiv = document.createElement('div');
                         timeDiv.className = 'match-time';
                         
-                        // Show time or "LIVE" status
-                        if (match.time_elapsed === 'notstarted') {
-                            timeDiv.textContent = formatMatchTime(match.local_date);
+                        // Check if match is live
+                        const isLive = match.time_elapsed !== 'notstarted';
+                        
+                        if (isLive) {
+                            // Live match - show score and status
+                            timeDiv.classList.add('live');
+                            
+                            const team1 = allTeams.find(t => t.id === match.home_team_id);
+                            const team2 = allTeams.find(t => t.id === match.away_team_id);
+                            const team1Code = team1 ? (team1.fifa_code || team1.name_en?.substring(0, 3).toUpperCase()) : 'TBD';
+                            const team2Code = team2 ? (team2.fifa_code || team2.name_en?.substring(0, 3).toUpperCase()) : 'TBD';
+                            
+                            const status = getMatchStatus(match.time_elapsed);
+                            
+                            timeDiv.innerHTML = `
+                                <div class="status">🔴 LIVE</div>
+                                <div class="score">${team1Code} ${match.home_score} - ${match.away_score} ${team2Code}</div>
+                                <div class="status">${status}</div>
+                            `;
                         } else {
-                            timeDiv.textContent = `LIVE ${match.time_elapsed}'`;
-                            timeDiv.style.color = '#4ade80';
-                            timeDiv.style.borderColor = '#4ade80';
+                            // Upcoming match - show date/time
+                            timeDiv.textContent = formatMatchTime(match.local_date);
                         }
                         
                         timeDiv.style.left = mx + 'px';
