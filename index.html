@@ -220,7 +220,7 @@
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
-        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.1</div>
+        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.2</div>
     </div>
 
     <div class="controls">
@@ -513,7 +513,7 @@
                         const isLive = match.time_elapsed !== 'notstarted';
                         
                         if (isLive) {
-                            // Live match - show score
+                            // Live match - show score and time
                             timeDiv.classList.add('live');
                             
                             const team1 = allTeams.find(t => t.id === match.home_team_id);
@@ -521,8 +521,12 @@
                             const team1Code = team1 ? (team1.fifa_code || team1.name_en?.substring(0, 3).toUpperCase()) : 'TBD';
                             const team2Code = team2 ? (team2.fifa_code || team2.name_en?.substring(0, 3).toUpperCase()) : 'TBD';
                             
+                            // Display match time (minute) if available
+                            const matchTime = match.time_elapsed;
+                            const timeDisplay = matchTime && matchTime !== 'live' ? matchTime + "'" : '';
+                            
                             timeDiv.innerHTML = `
-                                <div class="status">🔴 LIVE</div>
+                                <div class="status">🔴 LIVE ${timeDisplay}</div>
                                 <div class="score">${team1Code} ${match.home_score} - ${match.away_score} ${team2Code}</div>
                             `;
                         } else {
