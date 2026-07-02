@@ -451,9 +451,16 @@
                 const stadiumsData = await stadiumsRes.json();
 
                 allMatches = matchesData.games || matchesData;
-                allGroups = groupsData;
+                allGroups = groupsData.groups || groupsData;
                 allTeams = teamsData.teams || teamsData;
                 stadiums = stadiumsData.stadiums || stadiumsData;
+                
+                console.log('Data loaded:', {
+                    matches: allMatches.length,
+                    groups: allGroups.length,
+                    teams: allTeams.length,
+                    stadiums: stadiums.length
+                });
 
                 updateLastUpdate();
                 showGroups();
@@ -560,7 +567,7 @@
             
             groupLetters.forEach(letter => {
                 const groupTeams = allTeams.filter(team => team.groups === letter);
-                const groupData = allGroups.find(g => g.group === letter);
+                const groupData = allGroups.find(g => g.group === letter || g.name === letter);
                 
                 const card = document.createElement('div');
                 card.className = 'group-card';
