@@ -130,6 +130,20 @@
             filter: grayscale(100%);
         }
 
+        .match-time {
+            position: absolute;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .bracket-line {
             stroke: rgba(255, 255, 255, 0.15);
             stroke-width: 1.5;
@@ -192,6 +206,7 @@
         <svg id="bracketSvg"></svg>
         <div class="center-trophy">🏆</div>
         <div id="teamFlags"></div>
+        <div id="matchTimes"></div>
     </div>
 
     <div id="tooltip" class="tooltip"></div>
@@ -250,6 +265,29 @@
             }
         }
 
+        function parseMatchDate(dateString) {
+            // Parse "06/11/2026 13:00" format
+            const [datePart, timePart] = dateString.split(' ');
+            const [month, day, year] = datePart.split('/');
+            const [hours, minutes] = timePart.split(':');
+            return new Date(year, month - 1, day, hours, minutes);
+        }
+
+        function formatMatchTime(dateString) {
+            try {
+                const date = parseMatchDate(dateString);
+                const options = { 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                };
+                return date.toLocaleDateString('en-US', options);
+            } catch (e) {
+                return dateString;
+            }
+        }
+
         function renderWheel() {
             const container = document.getElementById('wheelContainer');
             const size = container.clientWidth;
@@ -257,9 +295,11 @@
 
             const svg = document.getElementById('bracketSvg');
             const flagsContainer = document.getElementById('teamFlags');
+            const timesContainer = document.getElementById('matchTimes');
             
             svg.innerHTML = '';
             flagsContainer.innerHTML = '';
+            timesContainer.innerHTML = '';
             svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
 
             // Radii for each round
@@ -326,6 +366,25 @@
 
                     if (team1) createFlag(flagsContainer, team1, t1x, t1y, match, 'home');
                     if (team2) createFlag(flagsContainer, team2, t2x, t2y, match, 'away');
+
+                    // Show match time if not yet finished
+                    if (match.finished === 'FALSE' && match.time_elapsed !== 'finished') {
+                        const timeDiv = document.createElement('div');
+                        timeDiv.className = 'match-time';
+                        
+                        // Show time or "LIVE" status
+                        if (match.time_elapsed === 'notstarted') {
+                            timeDiv.textContent = formatMatchTime(match.local_date);
+                        } else {
+                            timeDiv.textContent = `LIVE ${match.time_elapsed}'`;
+                            timeDiv.style.color = '#4ade80';
+                            timeDiv.style.borderColor = '#4ade80';
+                        }
+                        
+                        timeDiv.style.left = mx + 'px';
+                        timeDiv.style.top = my + 'px';
+                        timesContainer.appendChild(timeDiv);
+                    }
                 });
             });
         }
