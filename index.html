@@ -220,6 +220,7 @@
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
+        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.2.3</div>
     </div>
 
     <div class="controls">
@@ -395,19 +396,33 @@
                     drawLine(svg, t1x, t1y, mx, my, finished);
                     drawLine(svg, t2x, t2y, mx, my, finished);
 
-                    // Draw line to next round
-                    if (roundIdx < 3) {
-                        const nextRound = ['r32', 'r16', 'qf', 'sf'][roundIdx + 1];
-                        const nextRadius = radii[nextRound];
-                        const nextMatchIdx = Math.floor(matchIdx / 2);
-                        const nextPos = KNOCKOUT_POSITIONS[nextRound][nextMatchIdx];
-                        const nextAngleRad = (nextPos.angle - 90) * Math.PI / 180;
-                        const nx = center + nextRadius * Math.cos(nextAngleRad);
-                        const ny = center + nextRadius * Math.sin(nextAngleRad);
+                    // Draw line to next round - based on actual team progression
+                    if (roundIdx < 3 && match.finished === 'TRUE') {
+                        const nextRoundType = ['r32', 'r16', 'qf', 'sf'][roundIdx + 1];
+                        const nextRoundMatches = allMatches
+                            .filter(m => m.type === nextRoundType)
+                            .sort((a, b) => parseInt(a.id) - parseInt(b.id));
                         
-                        drawLine(svg, mx, my, nx, ny, finished);
-                    } else {
-                        // Connect semi-finals to center
+                        // Find which next-round match contains a team from this match
+                        const nextMatch = nextRoundMatches.find(nm => 
+                            [nm.home_team_id, nm.away_team_id].includes(match.home_team_id) ||
+                            [nm.home_team_id, nm.away_team_id].includes(match.away_team_id)
+                        );
+                        
+                        if (nextMatch) {
+                            const nextMatchIdx = nextRoundMatches.indexOf(nextMatch);
+                            if (nextMatchIdx >= 0 && nextMatchIdx < KNOCKOUT_POSITIONS[nextRoundType].length) {
+                                const nextRadius = radii[nextRoundType];
+                                const nextPos = KNOCKOUT_POSITIONS[nextRoundType][nextMatchIdx];
+                                const nextAngleRad = (nextPos.angle - 90) * Math.PI / 180;
+                                const nx = center + nextRadius * Math.cos(nextAngleRad);
+                                const ny = center + nextRadius * Math.sin(nextAngleRad);
+                                
+                                drawLine(svg, mx, my, nx, ny, finished);
+                            }
+                        }
+                    } else if (roundIdx === 3) {
+                        // Semi-finals connect to center
                         drawLine(svg, mx, my, center, center, finished);
                     }
 
