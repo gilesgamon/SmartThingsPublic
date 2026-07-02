@@ -220,7 +220,7 @@
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
-        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.2</div>
+        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.4.3</div>
     </div>
 
     <div class="controls">
@@ -265,8 +265,8 @@
                 {angle: -45}, {angle: 45}, {angle: 135}, {angle: 225}
             ],
             sf: [
-                // 2 matches - inner ring (horizontal)
-                {angle: 0}, {angle: 180}
+                // 2 matches - inner ring (horizontal: 90° = right, 270° = left after -90 offset)
+                {angle: 90}, {angle: 270}
             ]
         };
 
@@ -513,7 +513,7 @@
                         const isLive = match.time_elapsed !== 'notstarted';
                         
                         if (isLive) {
-                            // Live match - show score and time
+                            // Live match - show score
                             timeDiv.classList.add('live');
                             
                             const team1 = allTeams.find(t => t.id === match.home_team_id);
@@ -521,12 +521,8 @@
                             const team1Code = team1 ? (team1.fifa_code || team1.name_en?.substring(0, 3).toUpperCase()) : 'TBD';
                             const team2Code = team2 ? (team2.fifa_code || team2.name_en?.substring(0, 3).toUpperCase()) : 'TBD';
                             
-                            // Display match time (minute) if available
-                            const matchTime = match.time_elapsed;
-                            const timeDisplay = matchTime && matchTime !== 'live' ? matchTime + "'" : '';
-                            
                             timeDiv.innerHTML = `
-                                <div class="status">🔴 LIVE ${timeDisplay}</div>
+                                <div class="status">🔴 LIVE</div>
                                 <div class="score">${team1Code} ${match.home_score} - ${match.away_score} ${team2Code}</div>
                             `;
                         } else {
