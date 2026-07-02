@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIFA World Cup 2026 - Live Tracker</title>
+    <title>FIFA World Cup 2026 - Tournament Wheel</title>
     <style>
         * {
             margin: 0;
@@ -20,11 +20,13 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            z-index: 100;
         }
 
         .header h1 {
@@ -59,303 +61,182 @@
             }
         }
 
-        .last-update {
-            font-size: 0.9em;
-            opacity: 0.7;
-            margin-top: 10px;
-        }
-
         .controls {
             display: flex;
             gap: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             justify-content: center;
+            z-index: 100;
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.3);
             color: white;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1em;
+            font-size: 0.9em;
         }
 
         .btn:hover {
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-2px);
         }
 
-        .btn.active {
+        .wheel-container {
+            position: relative;
+            width: min(90vw, 90vh);
+            height: min(90vw, 90vh);
+            max-width: 1200px;
+            max-height: 1200px;
+            margin: 0 auto;
+        }
+
+        .wheel-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .center-trophy {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.1));
+            border: 3px solid #FFD700;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            z-index: 50;
+        }
+
+        .center-trophy .trophy-icon {
+            font-size: 3em;
+        }
+
+        .center-trophy .trophy-text {
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 5px;
+            color: #FFD700;
+        }
+
+        .team-node {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .team-node:hover {
+            transform: scale(1.2);
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            z-index: 100;
+        }
+
+        .team-node.winner {
             background: rgba(76, 175, 80, 0.3);
             border-color: #4CAF50;
         }
 
-        .container {
-            width: 100%;
-            max-width: 1400px;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
+        .team-node.eliminated {
+            opacity: 0.5;
+            filter: grayscale(100%);
         }
 
-        .groups-wheel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            width: 100%;
+        .team-flag {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .group-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .group-card::before {
-            content: '';
+        .team-code {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #4CAF50, #2196F3, #FFC107);
-        }
-
-        .group-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .group-header {
-            font-size: 1.8em;
+            bottom: -20px;
+            font-size: 0.7em;
             font-weight: bold;
-            margin-bottom: 15px;
-            text-align: center;
-            color: #FFC107;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
         }
 
-        .team {
-            padding: 12px;
-            margin: 8px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
+        .connection-line {
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 2;
+            fill: none;
         }
 
-        .team:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(5px);
+        .connection-line.active {
+            stroke: #4CAF50;
+            stroke-width: 3;
         }
 
-        .team-name {
-            font-size: 1.1em;
-            font-weight: 500;
-        }
-
-        .team-stats {
-            display: flex;
-            gap: 15px;
+        .round-label {
+            position: absolute;
             font-size: 0.9em;
-        }
-
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 35px;
-        }
-
-        .stat-label {
-            font-size: 0.8em;
-            opacity: 0.7;
-        }
-
-        .stat-value {
             font-weight: bold;
-            font-size: 1.1em;
-        }
-
-        .matches-section {
-            width: 100%;
-        }
-
-        .matches-title {
-            font-size: 2em;
-            margin-bottom: 20px;
-            text-align: center;
             color: #FFC107;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            text-align: center;
         }
 
-        .matches-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
+        .match-info {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            display: none;
+            z-index: 200;
+            min-width: 200px;
+            pointer-events: none;
         }
 
-        .match-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
+        .match-info.show {
+            display: block;
         }
 
-        .match-card.live {
-            border-color: #ff4444;
-            box-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+        .match-info .teams {
+            font-size: 1.1em;
+            margin-bottom: 10px;
         }
 
-        .match-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        .match-info .score {
+            font-size: 1.5em;
+            color: #FFD700;
+            font-weight: bold;
         }
 
-        .match-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+        .match-info .status {
             font-size: 0.9em;
             opacity: 0.8;
-        }
-
-        .match-group {
-            font-weight: bold;
-            color: #FFC107;
-        }
-
-        .match-status {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            font-weight: bold;
-        }
-
-        .match-status.live {
-            background: #ff4444;
-            animation: pulse 2s infinite;
-        }
-
-        .match-status.finished {
-            background: #4CAF50;
-        }
-
-        .match-status.upcoming {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .match-teams {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .match-team {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
-        }
-
-        .team-name-match {
-            font-size: 1.2em;
-            font-weight: 600;
-        }
-
-        .team-score {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #FFC107;
-        }
-
-        .match-date {
-            margin-top: 10px;
-            text-align: center;
-            font-size: 0.9em;
-            opacity: 0.7;
-        }
-
-        .match-date.upcoming {
-            font-size: 1em;
-            font-weight: 600;
-            opacity: 1;
-            color: #FFC107;
-        }
-
-        .match-countdown {
-            margin-top: 8px;
-            text-align: center;
-            font-size: 0.95em;
-            color: #4CAF50;
-            font-weight: 500;
-        }
-
-        .match-stadium {
             margin-top: 5px;
-            text-align: center;
-            font-size: 0.85em;
-            opacity: 0.6;
         }
 
         .loading {
             text-align: center;
             padding: 40px;
             font-size: 1.5em;
-        }
-
-        .error {
-            background: rgba(255, 68, 68, 0.2);
-            border: 2px solid #ff4444;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px auto;
-            text-align: left;
-            max-width: 800px;
-        }
-
-        .error h3 {
-            margin-bottom: 15px;
-            color: #ff4444;
-        }
-
-        .error-solutions {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-        }
-
-        .error-solutions code {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-
-        .error-solutions ol {
-            margin: 10px 0 10px 20px;
-        }
-
-        .error-solutions li {
-            margin: 8px 0;
         }
 
         .spinner {
@@ -377,50 +258,51 @@
             .header h1 {
                 font-size: 1.8em;
             }
-
-            .groups-wheel {
-                grid-template-columns: 1fr;
+            
+            .team-node {
+                width: 40px;
+                height: 40px;
             }
-
-            .matches-grid {
-                grid-template-columns: 1fr;
+            
+            .team-flag {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .team-code {
+                font-size: 0.6em;
             }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>⚽ FIFA World Cup 2026</h1>
+        <h1>🏆 FIFA World Cup 2026</h1>
         <div class="subtitle">
             <span class="live-indicator"></span>
-            Live Tournament Tracker
+            Tournament Wheel
         </div>
-        <div class="last-update" id="lastUpdate">Last updated: Loading...</div>
     </div>
 
     <div class="controls">
-        <button class="btn active" id="btnGroups" onclick="showGroups()">Group Stage</button>
-        <button class="btn" id="btnMatches" onclick="showMatches()">All Matches</button>
-        <button class="btn" id="btnLive" onclick="showLiveMatches()">Live Matches</button>
+        <button class="btn" onclick="showGroupStage()">Group Stage</button>
+        <button class="btn" onclick="showKnockout()">Knockout Stage</button>
         <button class="btn" onclick="refreshData()">🔄 Refresh</button>
     </div>
 
-    <div class="container">
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            Loading World Cup data...
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        Loading tournament data...
+    </div>
+
+    <div id="wheelContainer" class="wheel-container" style="display: none;">
+        <svg class="wheel-svg" id="wheelSvg"></svg>
+        <div class="center-trophy">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-text">FINAL</div>
         </div>
-        
-        <div id="error" class="error" style="display: none;"></div>
-        
-        <div id="groupsContainer" style="display: none;">
-            <div class="groups-wheel" id="groupsWheel"></div>
-        </div>
-        
-        <div id="matchesContainer" style="display: none;">
-            <h2 class="matches-title" id="matchesTitle">All Matches</h2>
-            <div class="matches-grid" id="matchesGrid"></div>
-        </div>
+        <div id="teamNodes"></div>
+        <div id="matchInfo" class="match-info"></div>
     </div>
 
     <script>
@@ -429,11 +311,10 @@
         let allGroups = [];
         let allTeams = [];
         let stadiums = [];
+        let currentView = 'groups';
 
         async function fetchData() {
             try {
-                showLoading(true);
-                
                 const [matchesRes, groupsRes, teamsRes, stadiumsRes] = await Promise.all([
                     fetch(`${API_BASE}/get/games`),
                     fetch(`${API_BASE}/get/groups`),
@@ -442,7 +323,7 @@
                 ]);
 
                 if (!matchesRes.ok || !groupsRes.ok || !teamsRes.ok || !stadiumsRes.ok) {
-                    throw new Error('Failed to fetch data from API');
+                    throw new Error('Failed to fetch data');
                 }
 
                 const matchesData = await matchesRes.json();
@@ -454,7 +335,7 @@
                 allGroups = groupsData.groups || groupsData;
                 allTeams = teamsData.teams || teamsData;
                 stadiums = stadiumsData.stadiums || stadiumsData;
-                
+
                 console.log('Data loaded:', {
                     matches: allMatches.length,
                     groups: allGroups.length,
@@ -462,277 +343,237 @@
                     stadiums: stadiums.length
                 });
 
-                updateLastUpdate();
-                showGroups();
-                showLoading(false);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('wheelContainer').style.display = 'block';
+                
+                showGroupStage();
             } catch (error) {
                 console.error('Error fetching data:', error);
-                showError('Unable to connect to FIFA World Cup API. Please try again later.');
-                showLoading(false);
-            }
-        }
-
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
-
-        function showError(message) {
-            const errorEl = document.getElementById('error');
-            const isFileProtocol = window.location.protocol === 'file:';
-            
-            if (isFileProtocol) {
-                errorEl.innerHTML = `
-                    <h3>⚠️ Local File Access Detected</h3>
-                    <p>You're opening this file directly from your filesystem. Modern browsers block API calls from local files for security reasons.</p>
-                    
-                    <div class="error-solutions">
-                        <strong>Quick Solutions:</strong>
-                        <ol>
-                            <li><strong>Python 3:</strong> Run <code>python3 -m http.server 8000</code> in this folder, then open <code>http://localhost:8000</code></li>
-                            <li><strong>Python 2:</strong> Run <code>python -m SimpleHTTPServer 8000</code></li>
-                            <li><strong>Node.js:</strong> Run <code>npx http-server</code> (installs automatically)</li>
-                            <li><strong>VS Code:</strong> Install "Live Server" extension and click "Go Live"</li>
-                            <li><strong>Chrome:</strong> Launch with <code>--disable-web-security</code> flag (not recommended)</li>
-                        </ol>
-                        <strong>Or deploy to GitHub Pages:</strong> See DEPLOYMENT.md
-                    </div>
-                    
-                    <p style="margin-top: 15px;">💡 Once you serve it via HTTP, the API will work perfectly!</p>
-                `;
-            } else {
-                errorEl.innerHTML = `
-                    <h3>⚠️ API Connection Error</h3>
-                    <p>${message}</p>
-                    <p style="margin-top: 10px;">The FIFA World Cup API might be temporarily unavailable. Please check:</p>
-                    <ul style="margin: 10px 0 10px 20px;">
-                        <li>Your internet connection</li>
-                        <li>API status at <a href="https://worldcup26.ir/health" target="_blank" style="color: #4CAF50;">worldcup26.ir/health</a></li>
-                        <li>Browser console for detailed errors (F12)</li>
-                    </ul>
+                document.getElementById('loading').innerHTML = `
+                    <h3>⚠️ Unable to load data</h3>
+                    <p>Please make sure you're serving this via HTTP (not file://)</p>
+                    <p>Run: <code>python3 -m http.server 8000</code></p>
                 `;
             }
-            errorEl.style.display = 'block';
         }
 
-        function hideError() {
-            document.getElementById('error').style.display = 'none';
-        }
+        function showGroupStage() {
+            currentView = 'groups';
+            const container = document.getElementById('wheelContainer');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const centerX = width / 2;
+            const centerY = height / 2;
 
-        function updateLastUpdate() {
-            const now = new Date();
-            document.getElementById('lastUpdate').textContent = 
-                `Last updated: ${now.toLocaleTimeString()}`;
-        }
+            const svg = document.getElementById('wheelSvg');
+            svg.innerHTML = '';
 
-        function showGroups() {
-            setActiveButton('btnGroups');
-            document.getElementById('groupsContainer').style.display = 'block';
-            document.getElementById('matchesContainer').style.display = 'none';
-            renderGroups();
-        }
-
-        function showMatches() {
-            setActiveButton('btnMatches');
-            document.getElementById('groupsContainer').style.display = 'none';
-            document.getElementById('matchesContainer').style.display = 'block';
-            document.getElementById('matchesTitle').textContent = 'All Matches';
-            renderMatches(allMatches);
-        }
-
-        function showLiveMatches() {
-            setActiveButton('btnLive');
-            const liveMatches = allMatches.filter(match => 
-                match.finished === 'FALSE' && 
-                match.time_elapsed !== 'notstarted' &&
-                match.time_elapsed !== 'FT'
-            );
-            
-            document.getElementById('groupsContainer').style.display = 'none';
-            document.getElementById('matchesContainer').style.display = 'block';
-            document.getElementById('matchesTitle').textContent = 
-                `Live Matches (${liveMatches.length})`;
-            renderMatches(liveMatches.length > 0 ? liveMatches : allMatches.slice(0, 20));
-        }
-
-        function setActiveButton(btnId) {
-            document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(btnId).classList.add('active');
-        }
-
-        function renderGroups() {
-            const container = document.getElementById('groupsWheel');
-            container.innerHTML = '';
+            const teamNodesContainer = document.getElementById('teamNodes');
+            teamNodesContainer.innerHTML = '';
 
             const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-            
-            groupLetters.forEach(letter => {
+            const totalGroups = groupLetters.length;
+            const radius = Math.min(width, height) * 0.4;
+
+            groupLetters.forEach((letter, groupIndex) => {
                 const groupTeams = allTeams.filter(team => team.groups === letter);
-                const groupData = allGroups.find(g => g.group === letter || g.name === letter);
+                const groupAngle = (groupIndex / totalGroups) * 2 * Math.PI - Math.PI / 2;
                 
-                const card = document.createElement('div');
-                card.className = 'group-card';
+                // Draw line from center to group position
+                const groupX = centerX + radius * Math.cos(groupAngle);
+                const groupY = centerY + radius * Math.sin(groupAngle);
                 
-                let teamsHTML = '';
-                groupTeams.forEach((team, index) => {
-                    const teamStats = groupData?.teams?.find(t => t.team_id === team.id) || 
-                                    { pts: '0', gf: '0', ga: '0' };
-                    
-                    teamsHTML += `
-                        <div class="team">
-                            <span class="team-name">${team.name_en || team.name_fa}</span>
-                            <div class="team-stats">
-                                <div class="stat">
-                                    <span class="stat-label">Pts</span>
-                                    <span class="stat-value">${teamStats.pts}</span>
-                                </div>
-                                <div class="stat">
-                                    <span class="stat-label">GF</span>
-                                    <span class="stat-value">${teamStats.gf}</span>
-                                </div>
-                                <div class="stat">
-                                    <span class="stat-label">GA</span>
-                                    <span class="stat-value">${teamStats.ga}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', centerX);
+                line.setAttribute('y1', centerY);
+                line.setAttribute('x2', groupX);
+                line.setAttribute('y2', groupY);
+                line.classList.add('connection-line');
+                svg.appendChild(line);
+
+                // Add round label
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'round-label';
+                labelDiv.textContent = `Group ${letter}`;
+                labelDiv.style.left = `${groupX}px`;
+                labelDiv.style.top = `${groupY - 80}px`;
+                labelDiv.style.transform = 'translateX(-50%)';
+                teamNodesContainer.appendChild(labelDiv);
+
+                // Place teams around the group position
+                groupTeams.forEach((team, teamIndex) => {
+                    const teamAngle = groupAngle + (teamIndex - 1.5) * 0.15;
+                    const teamRadius = radius * 0.95;
+                    const x = centerX + teamRadius * Math.cos(teamAngle);
+                    const y = centerY + teamRadius * Math.sin(teamAngle);
+
+                    createTeamNode(team, x, y, teamNodesContainer);
                 });
-                
-                card.innerHTML = `
-                    <div class="group-header">Group ${letter}</div>
-                    ${teamsHTML}
-                `;
-                
-                container.appendChild(card);
             });
         }
 
-        function parseMatchDate(dateString) {
-            const parts = dateString.split(' ');
-            const datePart = parts[0];
-            const timePart = parts[1];
-            const [month, day, year] = datePart.split('/');
-            const [hours, minutes] = timePart.split(':');
-            return new Date(year, month - 1, day, hours, minutes);
-        }
+        function showKnockout() {
+            currentView = 'knockout';
+            const container = document.getElementById('wheelContainer');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const centerX = width / 2;
+            const centerY = height / 2;
 
-        function getCountdown(matchDate) {
-            const now = new Date();
-            const diff = matchDate - now;
-            
-            if (diff < 0) return null;
-            
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            
-            if (days > 0) {
-                return `⏰ Kickoff in ${days} day${days !== 1 ? 's' : ''}, ${hours}h`;
-            } else if (hours > 0) {
-                return `⏰ Kickoff in ${hours}h ${minutes}m`;
-            } else if (minutes > 0) {
-                return `⏰ Kickoff in ${minutes} minute${minutes !== 1 ? 's' : ''}`;
-            } else {
-                return '⏰ Starting soon!';
-            }
-        }
+            const svg = document.getElementById('wheelSvg');
+            svg.innerHTML = '';
 
-        function formatMatchDate(dateString) {
-            try {
-                const matchDate = parseMatchDate(dateString);
-                const options = { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                };
-                return matchDate.toLocaleDateString('en-US', options);
-            } catch (e) {
-                return dateString;
-            }
-        }
+            const teamNodesContainer = document.getElementById('teamNodes');
+            teamNodesContainer.innerHTML = '';
 
-        function renderMatches(matches) {
-            const container = document.getElementById('matchesGrid');
-            container.innerHTML = '';
+            // Knockout rounds: R32, R16, QF, SF, Final
+            const rounds = [
+                { name: 'Round of 32', type: 'r32', radius: 0.45, count: 16 },
+                { name: 'Round of 16', type: 'r16', radius: 0.35, count: 8 },
+                { name: 'Quarter Finals', type: 'qf', radius: 0.25, count: 4 },
+                { name: 'Semi Finals', type: 'sf', radius: 0.15, count: 2 }
+            ];
 
-            if (matches.length === 0) {
-                container.innerHTML = '<p style="text-align: center; padding: 40px;">No matches found</p>';
-                return;
-            }
+            const baseRadius = Math.min(width, height);
 
-            matches.forEach(match => {
-                const isLive = match.finished === 'FALSE' && 
-                              match.time_elapsed !== 'notstarted' &&
-                              match.time_elapsed !== 'FT';
-                const isFinished = match.finished === 'TRUE' || match.time_elapsed === 'FT';
-                const isUpcoming = !isLive && !isFinished;
-                
-                const homeTeam = match.home_team_name_en || match.home_team_label || 'TBD';
-                const awayTeam = match.away_team_name_en || match.away_team_label || 'TBD';
-                
-                const stadium = stadiums.find(s => s.id === match.stadium_id);
-                const stadiumName = stadium ? `${stadium.name_en}, ${stadium.city_en}` : '';
-                
-                let statusClass = 'upcoming';
-                let statusText = 'Upcoming';
-                if (isLive) {
-                    statusClass = 'live';
-                    statusText = `LIVE ${match.time_elapsed}'`;
-                } else if (isFinished) {
-                    statusClass = 'finished';
-                    statusText = 'Finished';
-                }
-                
-                const formattedDate = formatMatchDate(match.local_date);
-                let countdownHTML = '';
-                
-                if (isUpcoming) {
-                    try {
-                        const matchDate = parseMatchDate(match.local_date);
-                        const countdown = getCountdown(matchDate);
-                        if (countdown) {
-                            countdownHTML = `<div class="match-countdown">${countdown}</div>`;
-                        }
-                    } catch (e) {
-                        console.log('Error parsing date:', e);
+            rounds.forEach((round, roundIndex) => {
+                const roundMatches = allMatches.filter(m => m.type === round.type);
+                const radius = baseRadius * round.radius;
+
+                roundMatches.forEach((match, matchIndex) => {
+                    const angle = (matchIndex / round.count) * 2 * Math.PI - Math.PI / 2;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    // Draw connection to center (or next round)
+                    const nextRadius = roundIndex < rounds.length - 1 ? 
+                        baseRadius * rounds[roundIndex + 1].radius : 
+                        baseRadius * 0.08;
+                    
+                    const nextAngle = Math.floor(matchIndex / 2) / (round.count / 2) * 2 * Math.PI - Math.PI / 2;
+                    const nextX = centerX + nextRadius * Math.cos(nextAngle);
+                    const nextY = centerY + nextRadius * Math.sin(nextAngle);
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x);
+                    line.setAttribute('y1', y);
+                    line.setAttribute('x2', nextX);
+                    line.setAttribute('y2', nextY);
+                    line.classList.add('connection-line');
+                    if (match.finished === 'TRUE') {
+                        line.classList.add('active');
                     }
-                }
+                    svg.appendChild(line);
+
+                    // Add teams if determined
+                    if (match.home_team_id !== '0') {
+                        const homeTeam = allTeams.find(t => t.id === match.home_team_id);
+                        if (homeTeam) {
+                            const homeX = x - 35;
+                            createTeamNode(homeTeam, homeX, y, teamNodesContainer, match);
+                        }
+                    }
+
+                    if (match.away_team_id !== '0') {
+                        const awayTeam = allTeams.find(t => t.id === match.away_team_id);
+                        if (awayTeam) {
+                            const awayX = x + 35;
+                            createTeamNode(awayTeam, awayX, y, teamNodesContainer, match);
+                        }
+                    }
+                });
+
+                // Add round label
+                const labelAngle = -Math.PI / 2;
+                const labelX = centerX + radius * Math.cos(labelAngle);
+                const labelY = centerY + radius * Math.sin(labelAngle) - 40;
                 
-                const card = document.createElement('div');
-                card.className = `match-card ${isLive ? 'live' : ''}`;
-                card.innerHTML = `
-                    <div class="match-header">
-                        <span class="match-group">${match.type?.toUpperCase() || 'Group'} ${match.group}</span>
-                        <span class="match-status ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="match-teams">
-                        <div class="match-team">
-                            <span class="team-name-match">${homeTeam}</span>
-                            <span class="team-score">${match.home_score}</span>
-                        </div>
-                        <div class="match-team">
-                            <span class="team-name-match">${awayTeam}</span>
-                            <span class="team-score">${match.away_score}</span>
-                        </div>
-                    </div>
-                    <div class="match-date ${isUpcoming ? 'upcoming' : ''}">${formattedDate}</div>
-                    ${countdownHTML}
-                    ${stadiumName ? `<div class="match-stadium">📍 ${stadiumName}</div>` : ''}
-                `;
-                
-                container.appendChild(card);
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'round-label';
+                labelDiv.textContent = round.name;
+                labelDiv.style.left = `${labelX}px`;
+                labelDiv.style.top = `${labelY}px`;
+                labelDiv.style.transform = 'translateX(-50%)';
+                teamNodesContainer.appendChild(labelDiv);
             });
+        }
+
+        function createTeamNode(team, x, y, container, match = null) {
+            const node = document.createElement('div');
+            node.className = 'team-node';
+            node.style.left = `${x - 30}px`;
+            node.style.top = `${y - 30}px`;
+
+            if (match && match.finished === 'TRUE') {
+                const homeWon = parseInt(match.home_score) > parseInt(match.away_score);
+                const awayWon = parseInt(match.away_score) > parseInt(match.home_score);
+                
+                if ((team.id === match.home_team_id && homeWon) || 
+                    (team.id === match.away_team_id && awayWon)) {
+                    node.classList.add('winner');
+                } else {
+                    node.classList.add('eliminated');
+                }
+            }
+
+            const flag = document.createElement('img');
+            flag.className = 'team-flag';
+            flag.src = team.flag || `https://flagcdn.com/w80/${team.iso2?.toLowerCase()}.png`;
+            flag.alt = team.name_en;
+            flag.onerror = function() {
+                this.style.display = 'none';
+                node.innerHTML = `<div style="font-size: 0.8em; font-weight: bold;">${team.fifa_code || team.name_en?.substring(0, 3).toUpperCase()}</div>`;
+            };
+
+            const code = document.createElement('div');
+            code.className = 'team-code';
+            code.textContent = team.fifa_code || team.name_en?.substring(0, 3).toUpperCase();
+
+            node.appendChild(flag);
+            node.appendChild(code);
+
+            node.addEventListener('mouseenter', (e) => showMatchInfo(team, match, e));
+            node.addEventListener('mouseleave', hideMatchInfo);
+
+            container.appendChild(node);
+        }
+
+        function showMatchInfo(team, match, event) {
+            const info = document.getElementById('matchInfo');
+            info.classList.add('show');
+            
+            let content = `<div class="teams">${team.name_en}</div>`;
+            
+            if (match) {
+                const homeTeam = allTeams.find(t => t.id === match.home_team_id);
+                const awayTeam = allTeams.find(t => t.id === match.away_team_id);
+                
+                content = `
+                    <div class="teams">${homeTeam?.name_en || 'TBD'} vs ${awayTeam?.name_en || 'TBD'}</div>
+                    <div class="score">${match.home_score} - ${match.away_score}</div>
+                    <div class="status">${match.finished === 'TRUE' ? 'Finished' : match.time_elapsed === 'notstarted' ? 'Upcoming' : 'Live'}</div>
+                    <div class="status">${match.local_date}</div>
+                `;
+            }
+            
+            info.innerHTML = content;
+            info.style.left = `${event.pageX + 20}px`;
+            info.style.top = `${event.pageY - 50}px`;
+        }
+
+        function hideMatchInfo() {
+            const info = document.getElementById('matchInfo');
+            info.classList.remove('show');
         }
 
         function refreshData() {
-            hideError();
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('wheelContainer').style.display = 'none';
             fetchData();
         }
 
         fetchData();
-        setInterval(fetchData, 30000);
+        setInterval(fetchData, 60000);
     </script>
 </body>
 </html>
