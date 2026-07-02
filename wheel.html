@@ -220,7 +220,7 @@
 <body>
     <div class="header">
         <h1>🏆 FIFA World Cup 2026</h1>
-        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.2.3</div>
+        <div style="font-size: 0.8em; opacity: 0.5; margin-top: 5px;">v1.2.4</div>
     </div>
 
     <div class="controls">
@@ -396,8 +396,8 @@
                     drawLine(svg, t1x, t1y, mx, my, finished);
                     drawLine(svg, t2x, t2y, mx, my, finished);
 
-                    // Draw line to next round - based on actual team progression
-                    if (roundIdx < 3 && match.finished === 'TRUE') {
+                    // Draw line to next round - Find this match in next round by ID
+                    if (roundIdx < 3 && finished) {
                         const nextRoundType = ['r32', 'r16', 'qf', 'sf'][roundIdx + 1];
                         const nextRoundMatches = allMatches
                             .filter(m => m.type === nextRoundType)
@@ -426,7 +426,7 @@
                         drawLine(svg, mx, my, center, center, finished);
                     }
 
-                    // Create team flags
+                    // Create team flags - place teams where they actually appear in THIS match
                     const team1 = allTeams.find(t => t.id === match.home_team_id);
                     const team2 = allTeams.find(t => t.id === match.away_team_id);
 
