@@ -144,6 +144,35 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .match-time.live {
+            color: #4ade80;
+            border-color: #4ade80;
+            background: rgba(0, 0, 0, 0.95);
+            font-weight: 600;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% {
+                box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 15px rgba(74, 222, 128, 0.6);
+            }
+        }
+
+        .match-time .score {
+            font-size: 13px;
+            font-weight: bold;
+            color: #FFD700;
+            margin: 2px 0;
+        }
+
+        .match-time .status {
+            font-size: 10px;
+            opacity: 0.9;
+        }
+
         .bracket-line {
             stroke: rgba(255, 255, 255, 0.15);
             stroke-width: 1.5;
