@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - FIFA World Cup 2026</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+        }
+        h1 { color: #0ff; }
+        h2 { color: #ff0; margin-top: 30px; }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        pre {
+            background: #000;
+            padding: 15px;
+            border: 1px solid #333;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .endpoint {
+            margin: 20px 0;
+            border: 1px solid #333;
+            padding: 15px;
+            background: #222;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 FIFA World Cup 2026 API Test</h1>
+    <p>Testing all API endpoints...</p>
+
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'https://worldcup26.ir';
+        const endpoints = [
+            { name: 'Health Check', url: '/health' },
+            { name: 'All Games', url: '/get/games' },
+            { name: 'All Teams', url: '/get/teams' },
+            { name: 'All Groups', url: '/get/groups' },
+            { name: 'All Stadiums', url: '/get/stadiums' }
+        ];
+
+        async function testEndpoint(endpoint) {
+            const startTime = Date.now();
+            try {
+                const response = await fetch(`${API_BASE}${endpoint.url}`);
+                const elapsed = Date.now() - startTime;
+                
+                if (!response.ok) {
+                    return {
+                        ...endpoint,
+                        success: false,
+                        error: `HTTP ${response.status}: ${response.statusText}`,
+                        elapsed
+                    };
+                }
+
+                const data = await response.json();
+                return {
+                    ...endpoint,
+                    success: true,
+                    data,
+                    elapsed,
+                    size: JSON.stringify(data).length
+                };
+            } catch (error) {
+                return {
+                    ...endpoint,
+                    success: false,
+                    error: error.message,
+                    elapsed: Date.now() - startTime
+                };
+            }
+        }
+
+        async function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>⏳ Testing endpoints...</p>';
+
+            for (const endpoint of endpoints) {
+                const result = await testEndpoint(endpoint);
+                
+                const div = document.createElement('div');
+                div.className = 'endpoint';
+                
+                if (result.success) {
+                    let dataPreview = JSON.stringify(result.data, null, 2);
+                    if (dataPreview.length > 2000) {
+                        dataPreview = dataPreview.substring(0, 2000) + '\n... (truncated)';
+                    }
+
+                    div.innerHTML = `
+                        <h2 class="success">✅ ${result.name}</h2>
+                        <p><strong>URL:</strong> ${API_BASE}${result.url}</p>
+                        <p><strong>Time:</strong> ${result.elapsed}ms</p>
+                        <p><strong>Size:</strong> ${(result.size / 1024).toFixed(2)} KB</p>
+                        <p><strong>Response:</strong></p>
+                        <pre>${dataPreview}</pre>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <h2 class="error">❌ ${result.name}</h2>
+                        <p><strong>URL:</strong> ${API_BASE}${result.url}</p>
+                        <p><strong>Time:</strong> ${result.elapsed}ms</p>
+                        <p class="error"><strong>Error:</strong> ${result.error}</p>
+                    `;
+                }
+                
+                resultsDiv.appendChild(div);
+            }
+
+            const summary = document.createElement('div');
+            summary.innerHTML = `
+                <h2>📊 Summary</h2>
+                <p>Protocol: <strong>${window.location.protocol}</strong></p>
+                <p>Host: <strong>${window.location.host || 'local file'}</strong></p>
+                <p>Browser: <strong>${navigator.userAgent}</strong></p>
+            `;
+            resultsDiv.appendChild(summary);
+        }
+
+        runTests();
+    </script>
+</body>
+</html>
