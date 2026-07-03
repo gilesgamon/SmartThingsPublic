@@ -41,6 +41,13 @@ This tracker uses the free, open-source [FIFA World Cup 2026 API](https://worldc
 - Real-time updates during tournament
 - Complete data for all teams, groups, matches, and stadiums
 
+**Important:** Match times are provided in **stadium local time**, not a single global timezone:
+- Games in **Eastern** stadiums (Toronto, New York, Miami, etc): EDT (UTC-4) / EST (UTC-5)
+- Games in **Central** stadiums (Mexico City, Dallas, Houston, etc): CDT (UTC-5) / CST (UTC-6)
+- Games in **Western** stadiums (LA, Seattle, Vancouver, etc): PDT (UTC-7) / PST (UTC-8)
+
+The app automatically converts each match time to your browser's local timezone based on the stadium location.
+
 ## Technical Details
 
 - Pure HTML/CSS/JavaScript (no frameworks required)

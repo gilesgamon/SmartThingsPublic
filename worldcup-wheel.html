@@ -650,25 +650,63 @@
             });
         }
 
-        // World Cup 2026 API provides times in US Eastern Time (EDT/EST)
-        // User feedback from Colombia confirmed EDT (UTC-4) is correct
-        // EDT (Eastern Daylight Time) is UTC-4 during summer months (March-November)
-        // EST (Eastern Standard Time) is UTC-5 during winter months
+        // World Cup 2026 API provides times in STADIUM LOCAL TIME
+        // Each stadium is in a different timezone across USA, Canada, and Mexico
+        // Stadium timezone mapping based on region field from API
+        
+        const STADIUM_TIMEZONE_MAP = {
+            // Eastern: UTC-4 (EDT) / UTC-5 (EST)
+            '7': 'Eastern',   // Atlanta
+            '8': 'Eastern',   // Miami
+            '9': 'Eastern',   // Boston
+            '10': 'Eastern',  // Philadelphia
+            '11': 'Eastern',  // New York/New Jersey
+            '12': 'Eastern',  // Toronto
+            
+            // Central: UTC-5 (CDT) / UTC-6 (CST)
+            '1': 'Central',   // Mexico City
+            '2': 'Central',   // Guadalajara
+            '3': 'Central',   // Monterrey
+            '4': 'Central',   // Dallas
+            '5': 'Central',   // Houston
+            '6': 'Central',   // Kansas City
+            
+            // Western: UTC-7 (PDT) / UTC-8 (PST)
+            '13': 'Western',  // Vancouver
+            '14': 'Western',  // Seattle
+            '15': 'Western',  // San Francisco
+            '16': 'Western'   // Los Angeles
+        };
+        
+        function getTimezoneOffset(region, month) {
+            // Determine if DST is in effect (March-November in North America)
+            const isDST = month >= 3 && month <= 11;
+            
+            // Return UTC offset string based on region and DST
+            if (region === 'Eastern') {
+                return isDST ? '-04:00' : '-05:00'; // EDT / EST
+            } else if (region === 'Central') {
+                return isDST ? '-05:00' : '-06:00'; // CDT / CST
+            } else if (region === 'Western') {
+                return isDST ? '-07:00' : '-08:00'; // PDT / PST
+            }
+            // Default to Eastern if unknown
+            return isDST ? '-04:00' : '-05:00';
+        }
 
-        function parseMatchDate(dateString) {
+        function parseMatchDate(dateString, stadiumId) {
             const parts = dateString.split(' ');
             const datePart = parts[0];
             const timePart = parts[1];
             const [month, day, year] = datePart.split('/');
             const [hours, minutes] = timePart.split(':');
             
-            // API returns times in US Eastern Time
-            // Determine if DST is in effect for this date (March-November)
+            // Get stadium timezone region
+            const region = STADIUM_TIMEZONE_MAP[stadiumId] || 'Eastern';
             const matchMonth = parseInt(month);
-            const isDST = matchMonth >= 3 && matchMonth <= 11; // Simplified DST check
-            const offset = isDST ? '-04:00' : '-05:00'; // EDT or EST
+            const offset = getTimezoneOffset(region, matchMonth);
             
-            // Create date string in ISO format with ET timezone
+            // Create date string in ISO format with stadium's local timezone
             const dateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00${offset}`;
             return new Date(dateStr);
         }
@@ -694,9 +732,9 @@
             }
         }
 
-        function formatMatchDate(dateString) {
+        function formatMatchDate(dateString, stadiumId) {
             try {
-                const matchDate = parseMatchDate(dateString);
+                const matchDate = parseMatchDate(dateString, stadiumId);
                 const options = { 
                     weekday: 'short', 
                     month: 'short', 
@@ -743,12 +781,12 @@
                     statusText = 'Finished';
                 }
                 
-                const formattedDate = formatMatchDate(match.local_date);
+                const formattedDate = formatMatchDate(match.local_date, match.stadium_id);
                 let countdownHTML = '';
                 
                 if (isUpcoming) {
                     try {
-                        const matchDate = parseMatchDate(match.local_date);
+                        const matchDate = parseMatchDate(match.local_date, match.stadium_id);
                         const countdown = getCountdown(matchDate);
                         if (countdown) {
                             countdownHTML = `<div class="match-countdown">${countdown}</div>`;
