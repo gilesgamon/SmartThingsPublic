@@ -287,10 +287,13 @@
         }
 
         .match-date {
-            margin-top: 10px;
+            margin-top: 15px;
+            padding-top: 10px;
             text-align: center;
             font-size: 0.9em;
             opacity: 0.7;
+            line-height: 1.5;
+            min-height: 20px;
         }
 
         .match-date.upcoming {
@@ -298,21 +301,29 @@
             font-weight: 600;
             opacity: 1;
             color: #FFC107;
+            margin-top: 15px;
+            padding-top: 12px;
         }
 
         .match-countdown {
-            margin-top: 8px;
+            margin-top: 12px;
+            padding-top: 8px;
             text-align: center;
             font-size: 0.95em;
             color: #4CAF50;
             font-weight: 500;
+            line-height: 1.5;
+            min-height: 22px;
         }
 
         .match-stadium {
-            margin-top: 5px;
+            margin-top: 10px;
+            padding-top: 6px;
             text-align: center;
             font-size: 0.85em;
             opacity: 0.6;
+            line-height: 1.5;
+            min-height: 18px;
         }
 
         .loading {
@@ -384,6 +395,34 @@
 
             .matches-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .match-card {
+                padding: 20px 15px;
+            }
+
+            .match-date {
+                margin-top: 18px;
+                padding-top: 12px;
+                font-size: 0.95em;
+                line-height: 1.6;
+            }
+
+            .match-date.upcoming {
+                margin-top: 18px;
+                padding-top: 14px;
+            }
+
+            .match-countdown {
+                margin-top: 14px;
+                padding-top: 10px;
+                line-height: 1.6;
+            }
+
+            .match-stadium {
+                margin-top: 12px;
+                padding-top: 8px;
+                line-height: 1.6;
             }
         }
     </style>
@@ -607,13 +646,25 @@
             });
         }
 
+        // World Cup 2026 API appears to provide all times in US Pacific Time (PDT/PST)
+        // PDT (Pacific Daylight Time) is UTC-7 during summer months  
+        // PST (Pacific Standard Time) is UTC-8 during winter months
+        // For World Cup 2026 (June-July), we use PDT (UTC-7)
+        const API_TIMEZONE_OFFSET = -7; // PDT is UTC-7
+
         function parseMatchDate(dateString) {
             const parts = dateString.split(' ');
             const datePart = parts[0];
             const timePart = parts[1];
             const [month, day, year] = datePart.split('/');
             const [hours, minutes] = timePart.split(':');
-            return new Date(year, month - 1, day, hours, minutes);
+            
+            // Convert Pacific Time to UTC
+            // API time is in PDT (UTC-7), so we add 7 hours to get UTC
+            const utcHours = parseInt(hours) - API_TIMEZONE_OFFSET; // hours - (-7) = hours + 7
+            const utcDate = new Date(Date.UTC(year, month - 1, day, utcHours, parseInt(minutes)));
+            
+            return utcDate;
         }
 
         function getCountdown(matchDate) {
