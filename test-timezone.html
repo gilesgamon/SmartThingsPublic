@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Timezone Test</title>
+</head>
+<body>
+    <h1>Timezone Conversion Test</h1>
+    <div id="output"></div>
+
+    <script>
+        function parseMatchDate(dateString) {
+            const parts = dateString.split(' ');
+            const datePart = parts[0];
+            const timePart = parts[1];
+            const [month, day, year] = datePart.split('/');
+            const [hours, minutes] = timePart.split(':');
+            
+            // API returns times in US Eastern Time
+            // Determine if DST is in effect for this date (March-November)
+            const matchMonth = parseInt(month);
+            const isDST = matchMonth >= 3 && matchMonth <= 11; // Simplified DST check
+            const offset = isDST ? '-04:00' : '-05:00'; // EDT or EST
+            
+            // Create date string in ISO format with ET timezone
+            const dateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00${offset}`;
+            return new Date(dateStr);
+        }
+
+        function formatMatchDate(dateString) {
+            try {
+                const matchDate = parseMatchDate(dateString);
+                const options = { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZoneName: 'short'
+                };
+                return matchDate.toLocaleString('en-US', options);
+            } catch (e) {
+                return dateString + " (ERROR: " + e.message + ")";
+            }
+        }
+
+        // Test cases
+        const tests = [
+            "07/03/2026 21:00", // 9 PM EDT (July = DST active, UTC-4)
+            "07/03/2026 22:00", // 10 PM EDT
+            "01/15/2027 20:00", // 8 PM EST (January = DST inactive, UTC-5)
+            "06/11/2026 13:00"  // 1 PM EDT
+        ];
+
+        let output = "<h2>Test Results:</h2>";
+        output += "<p><strong>Your browser's timezone:</strong> " + Intl.DateTimeFormat().resolvedOptions().timeZone + "</p>";
+        output += "<table border='1' cellpadding='10'><tr><th>API Time (ET)</th><th>Parsed Date</th><th>Your Local Time</th></tr>";
+        
+        tests.forEach(test => {
+            const parsed = parseMatchDate(test);
+            const formatted = formatMatchDate(test);
+            output += `<tr><td>${test}</td><td>${parsed.toISOString()}</td><td>${formatted}</td></tr>`;
+        });
+        
+        output += "</table>";
+        
+        output += "<h2>Example Scenario:</h2>";
+        output += "<p>If API shows: <strong>07/03/2026 21:00</strong> (9 PM EDT)</p>";
+        output += "<p>In Colombia (UTC-5): <strong>" + formatMatchDate("07/03/2026 21:00") + "</strong></p>";
+        output += "<p>Difference: EDT is UTC-4, Colombia is UTC-5, so Colombia time = EDT + 1 hour = 10 PM</p>";
+        
+        document.getElementById('output').innerHTML = output;
+    </script>
+</body>
+</html>
