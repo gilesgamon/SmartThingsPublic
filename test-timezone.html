@@ -1,34 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Timezone Test</title>
+    <title>World Cup 2026 - Stadium Timezone Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        .region-eastern { background-color: #e3f2fd; }
+        .region-central { background-color: #fff3e0; }
+        .region-western { background-color: #f3e5f5; }
+    </style>
 </head>
 <body>
-    <h1>Timezone Conversion Test</h1>
+    <h1>🏟️ World Cup 2026 - Stadium Timezone Test</h1>
     <div id="output"></div>
 
     <script>
-        function parseMatchDate(dateString) {
+        // Stadium timezone mapping - API returns times in STADIUM LOCAL TIME
+        const STADIUM_TIMEZONE_MAP = {
+            // Eastern: UTC-4 (EDT) / UTC-5 (EST)
+            '7': 'Eastern',   // Atlanta
+            '8': 'Eastern',   // Miami
+            '9': 'Eastern',   // Boston
+            '10': 'Eastern',  // Philadelphia
+            '11': 'Eastern',  // New York/New Jersey
+            '12': 'Eastern',  // Toronto
+            
+            // Central: UTC-5 (CDT) / UTC-6 (CST)
+            '1': 'Central',   // Mexico City
+            '2': 'Central',   // Guadalajara
+            '3': 'Central',   // Monterrey
+            '4': 'Central',   // Dallas
+            '5': 'Central',   // Houston
+            '6': 'Central',   // Kansas City
+            
+            // Western: UTC-7 (PDT) / UTC-8 (PST)
+            '13': 'Western',  // Vancouver
+            '14': 'Western',  // Seattle
+            '15': 'Western',  // San Francisco
+            '16': 'Western'   // Los Angeles
+        };
+        
+        const STADIUM_NAMES = {
+            '1': 'Mexico City', '2': 'Guadalajara', '3': 'Monterrey',
+            '4': 'Dallas', '5': 'Houston', '6': 'Kansas City',
+            '7': 'Atlanta', '8': 'Miami', '9': 'Boston',
+            '10': 'Philadelphia', '11': 'New York', '12': 'Toronto',
+            '13': 'Vancouver', '14': 'Seattle', '15': 'San Francisco', '16': 'Los Angeles'
+        };
+
+        function getTimezoneOffset(region, month) {
+            const isDST = month >= 3 && month <= 11;
+            if (region === 'Eastern') return isDST ? '-04:00' : '-05:00';
+            if (region === 'Central') return isDST ? '-05:00' : '-06:00';
+            if (region === 'Western') return isDST ? '-07:00' : '-08:00';
+            return isDST ? '-04:00' : '-05:00';
+        }
+
+        function parseMatchDate(dateString, stadiumId) {
             const parts = dateString.split(' ');
             const datePart = parts[0];
             const timePart = parts[1];
             const [month, day, year] = datePart.split('/');
             const [hours, minutes] = timePart.split(':');
             
-            // API returns times in US Eastern Time
-            // Determine if DST is in effect for this date (March-November)
+            const region = STADIUM_TIMEZONE_MAP[stadiumId] || 'Eastern';
             const matchMonth = parseInt(month);
-            const isDST = matchMonth >= 3 && matchMonth <= 11; // Simplified DST check
-            const offset = isDST ? '-04:00' : '-05:00'; // EDT or EST
+            const offset = getTimezoneOffset(region, matchMonth);
             
-            // Create date string in ISO format with ET timezone
             const dateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00${offset}`;
             return new Date(dateStr);
         }
 
-        function formatMatchDate(dateString) {
+        function formatMatchDate(dateString, stadiumId) {
             try {
-                const matchDate = parseMatchDate(dateString);
+                const matchDate = parseMatchDate(dateString, stadiumId);
                 const options = { 
                     weekday: 'short', 
                     month: 'short', 
@@ -43,30 +90,41 @@
             }
         }
 
-        // Test cases
-        const tests = [
-            "07/03/2026 21:00", // 9 PM EDT (July = DST active, UTC-4)
-            "07/03/2026 22:00", // 10 PM EDT
-            "01/15/2027 20:00", // 8 PM EST (January = DST inactive, UTC-5)
-            "06/11/2026 13:00"  // 1 PM EDT
-        ];
-
-        let output = "<h2>Test Results:</h2>";
-        output += "<p><strong>Your browser's timezone:</strong> " + Intl.DateTimeFormat().resolvedOptions().timeZone + "</p>";
-        output += "<table border='1' cellpadding='10'><tr><th>API Time (ET)</th><th>Parsed Date</th><th>Your Local Time</th></tr>";
+        // Test with different stadiums
+        const testDateTime = "07/03/2026 21:00"; // 9 PM local time at each stadium
         
-        tests.forEach(test => {
-            const parsed = parseMatchDate(test);
-            const formatted = formatMatchDate(test);
-            output += `<tr><td>${test}</td><td>${parsed.toISOString()}</td><td>${formatted}</td></tr>`;
+        let output = "<h2>📍 Your Browser Timezone: " + Intl.DateTimeFormat().resolvedOptions().timeZone + "</h2>";
+        output += "<p><strong>Test scenario:</strong> All matches scheduled at <strong>9:00 PM</strong> stadium local time</p>";
+        output += "<table><tr><th>Stadium</th><th>Region</th><th>Stadium Local Time</th><th>UTC Offset</th><th>Your Local Time</th></tr>";
+        
+        // Test each stadium
+        ['1', '4', '7', '8', '11', '13', '14', '16'].forEach(stadiumId => {
+            const region = STADIUM_TIMEZONE_MAP[stadiumId];
+            const offset = getTimezoneOffset(region, 7); // July
+            const parsed = parseMatchDate(testDateTime, stadiumId);
+            const formatted = formatMatchDate(testDateTime, stadiumId);
+            const rowClass = region === 'Eastern' ? 'region-eastern' : 
+                           region === 'Central' ? 'region-central' : 'region-western';
+            
+            output += `<tr class="${rowClass}">
+                <td><strong>${STADIUM_NAMES[stadiumId]}</strong></td>
+                <td>${region}</td>
+                <td>${testDateTime}</td>
+                <td>UTC${offset}</td>
+                <td><strong>${formatted}</strong></td>
+            </tr>`;
         });
         
         output += "</table>";
         
-        output += "<h2>Example Scenario:</h2>";
-        output += "<p>If API shows: <strong>07/03/2026 21:00</strong> (9 PM EDT)</p>";
-        output += "<p>In Colombia (UTC-5): <strong>" + formatMatchDate("07/03/2026 21:00") + "</strong></p>";
-        output += "<p>Difference: EDT is UTC-4, Colombia is UTC-5, so Colombia time = EDT + 1 hour = 10 PM</p>";
+        output += "<h2>🎯 Colombia Example (UTC-5):</h2>";
+        output += "<ul>";
+        output += "<li><strong>Eastern Stadium (Miami)</strong>: 9 PM EDT (UTC-4) = <strong>10 PM Colombia</strong></li>";
+        output += "<li><strong>Central Stadium (Mexico City)</strong>: 9 PM CDT (UTC-5) = <strong>9 PM Colombia</strong> ✓</li>";
+        output += "<li><strong>Western Stadium (LA)</strong>: 9 PM PDT (UTC-7) = <strong>12 AM Colombia</strong> (next day)</li>";
+        output += "</ul>";
+        
+        output += "<p><em>✅ This is why the API uses STADIUM local time - each venue has its own timezone!</em></p>";
         
         document.getElementById('output').innerHTML = output;
     </script>
