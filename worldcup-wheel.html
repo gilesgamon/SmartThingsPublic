@@ -435,6 +435,9 @@
             Live Tournament Tracker
         </div>
         <div class="last-update" id="lastUpdate">Last updated: Loading...</div>
+        <div style="font-size: 0.85em; opacity: 0.6; margin-top: 5px;">
+            Times shown in your local timezone
+        </div>
     </div>
 
     <div class="controls">
@@ -468,6 +471,7 @@
         let allGroups = [];
         let allTeams = [];
         let stadiums = [];
+        let timezoneOffset = -5; // Default: API times are in US Eastern Time (UTC-5)
 
         async function fetchData() {
             try {
@@ -646,11 +650,10 @@
             });
         }
 
-        // World Cup 2026 API appears to provide all times in US Pacific Time (PDT/PST)
-        // PDT (Pacific Daylight Time) is UTC-7 during summer months  
-        // PST (Pacific Standard Time) is UTC-8 during winter months
-        // For World Cup 2026 (June-July), we use PDT (UTC-7)
-        const API_TIMEZONE_OFFSET = -7; // PDT is UTC-7
+        // World Cup 2026 API provides times in US Eastern Time (EDT/EST)
+        // User feedback from Colombia confirmed EDT (UTC-4) is correct
+        // EDT (Eastern Daylight Time) is UTC-4 during summer months (March-November)
+        // EST (Eastern Standard Time) is UTC-5 during winter months
 
         function parseMatchDate(dateString) {
             const parts = dateString.split(' ');
@@ -659,12 +662,15 @@
             const [month, day, year] = datePart.split('/');
             const [hours, minutes] = timePart.split(':');
             
-            // Convert Pacific Time to UTC
-            // API time is in PDT (UTC-7), so we add 7 hours to get UTC
-            const utcHours = parseInt(hours) - API_TIMEZONE_OFFSET; // hours - (-7) = hours + 7
-            const utcDate = new Date(Date.UTC(year, month - 1, day, utcHours, parseInt(minutes)));
+            // API returns times in US Eastern Time
+            // Determine if DST is in effect for this date (March-November)
+            const matchMonth = parseInt(month);
+            const isDST = matchMonth >= 3 && matchMonth <= 11; // Simplified DST check
+            const offset = isDST ? '-04:00' : '-05:00'; // EDT or EST
             
-            return utcDate;
+            // Create date string in ISO format with ET timezone
+            const dateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00${offset}`;
+            return new Date(dateStr);
         }
 
         function getCountdown(matchDate) {
@@ -696,9 +702,10 @@
                     month: 'short', 
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZoneName: 'short'
                 };
-                return matchDate.toLocaleDateString('en-US', options);
+                return matchDate.toLocaleString('en-US', options);
             } catch (e) {
                 return dateString;
             }
