@@ -646,13 +646,25 @@
             });
         }
 
+        // World Cup 2026 API appears to provide all times in US Pacific Time (PDT/PST)
+        // PDT (Pacific Daylight Time) is UTC-7 during summer months  
+        // PST (Pacific Standard Time) is UTC-8 during winter months
+        // For World Cup 2026 (June-July), we use PDT (UTC-7)
+        const API_TIMEZONE_OFFSET = -7; // PDT is UTC-7
+
         function parseMatchDate(dateString) {
             const parts = dateString.split(' ');
             const datePart = parts[0];
             const timePart = parts[1];
             const [month, day, year] = datePart.split('/');
             const [hours, minutes] = timePart.split(':');
-            return new Date(year, month - 1, day, hours, minutes);
+            
+            // Convert Pacific Time to UTC
+            // API time is in PDT (UTC-7), so we add 7 hours to get UTC
+            const utcHours = parseInt(hours) - API_TIMEZONE_OFFSET; // hours - (-7) = hours + 7
+            const utcDate = new Date(Date.UTC(year, month - 1, day, utcHours, parseInt(minutes)));
+            
+            return utcDate;
         }
 
         function getCountdown(matchDate) {
